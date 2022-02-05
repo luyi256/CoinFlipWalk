@@ -1,3 +1,8 @@
+metric
+MCother
+*.log
+test*
+*.sh
 # Prerequisites
 *.d
 
