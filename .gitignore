@@ -1,7 +1,12 @@
 metric
 MCother
+.gitignore
 *.log
 test*
+runlog/
+analysis/
+result/
+dataset/
 *.sh
 # Prerequisites
 *.d

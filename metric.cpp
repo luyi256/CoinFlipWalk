@@ -7,7 +7,7 @@
 #include <fstream>
 #include <cstring>
 #include <unordered_set>
-#include "Graph.h"
+#include "Graphother.h"
 #include "Random.h"
 #include <random>
 using namespace std;
@@ -18,9 +18,7 @@ class metric
 private:
     uint vert;
     double *gtvalues;
-    vector<pair<double, uint> > algoanswers;
     vector<pair<double, uint> > unnm_algoanswers;
-    vector<pair<double, uint> > gtanswers;
     vector<pair<double, int> > unnm_gtanswers;
     uint k;
     double *algovalues;
@@ -72,24 +70,23 @@ double metric::calPrecision()
 double metric::conductance()
 {
     uint cvert = g.n;
-    uint cedge = g.m;
-    double ctotald = g.totaldeg;
+    double ctotald = g.totdeg;
 
     double numcut = 0;
     double crt_vol = 0;
     double crt_Phi = 1.0;
-    uint nonzero = algoanswers.size();
+    uint nonzero = unnm_algoanswers.size();
     uint *cutcheck = new uint[cvert]();
 
     for (uint i = 0; i < nonzero; i++)
     {
-        if (algoanswers[i].first == 0)
+        if (unnm_algoanswers[i].first == 0)
         {
             break;
         }
-        uint crt_node = algoanswers[i].second;
-        uint crt_OutSize = g.getOutSize(crt_node);
-        double crt_outdeg = g.getOutVertWeight(crt_node);
+        uint crt_node = unnm_algoanswers[i].second;
+        uint crt_OutSize = g.outSizeList[crt_node];
+        double crt_outdeg = g.outWeightList[crt_node];
 
         if (crt_OutSize == 0)
         {
@@ -99,14 +96,14 @@ double metric::conductance()
         cutcheck[crt_node] = 1;
         for (uint j = 0; j < crt_OutSize; j++)
         {
-            uint tmpOutV = g.getOutVert(crt_node, j); //tmp out-neighbor node
+            uint tmpOutV = g.neighborList[crt_node][j].id; // tmp out-neighbor node
             if (cutcheck[tmpOutV] == 1)
             {
-                numcut -= g.getOutEdgeWeight(crt_node, j);
+                numcut -= g.neighborList[crt_node][j].w;
             }
             else
             {
-                numcut += g.getOutEdgeWeight(crt_node, j);
+                numcut += g.neighborList[crt_node][j].w;
             }
         }
 
@@ -142,10 +139,10 @@ double metric::cal_l1Error()
     double l1Err = 0;
     uint *nnzarr = new uint[vert]();
     double tmp_err;
-    for (uint j = 0; j < algoanswers.size(); j++)
+    for (uint j = 0; j < unnm_algoanswers.size(); j++)
     {
-        uint tmpnode = algoanswers[j].second;
-        tmp_err = abs(algoanswers[j].first - gtvalues[tmpnode]);
+        uint tmpnode = unnm_algoanswers[j].second;
+        tmp_err = abs(unnm_algoanswers[j].first - gtvalues[tmpnode]);
         l1Err += tmp_err;
         nnzarr[tmpnode] = 1;
     }
@@ -167,15 +164,15 @@ double metric::cal_maxAE()
     uint *nnzarr = new uint[vert]();
     double tmp_err, max_err = 0, algoans;
     uint max_node = -1;
-    for (uint j = 0; j < algoanswers.size(); j++)
+    for (uint j = 0; j < unnm_algoanswers.size(); j++)
     {
-        uint tmpnode = algoanswers[j].second;
-        tmp_err = abs(algoanswers[j].first - gtvalues[tmpnode]);
+        uint tmpnode = unnm_algoanswers[j].second;
+        tmp_err = abs(unnm_algoanswers[j].first - gtvalues[tmpnode]);
         if (tmp_err > max_err)
         {
             max_err = tmp_err;
             max_node = tmpnode;
-            algoans = algoanswers[j].first;
+            algoans = unnm_algoanswers[j].first;
         }
         nnzarr[tmpnode] = 1;
     }
@@ -193,10 +190,6 @@ double metric::cal_maxAE()
         }
     }
     delete[] nnzarr;
-    // if (max_node == -1)
-    //     printf("max_err=0\n");
-    // else
-    //     printf("nodeIdx:%d gt:%lf algoans:%lf max_err:%lf\n", max_node, gtvalues[max_node], algoans, max_err);
     return max_err;
 }
 
@@ -237,18 +230,14 @@ metric::metric(string filedir, string filelabel, string algoname, long querynum,
         double gt_tempSim;
         while (gtin >> gt_tempNode >> gt_tempSim)
         {
-            double gt_tempOut = g.getOutVertWeight(gt_tempNode);
-            // double gt_tempOut = 1.0;
-            if ((gt_tempSim > 0.0) && (gt_tempOut > 0.0))
+            if (gt_tempSim > 0.0)
             {
-                gtvalues[gt_tempNode] = gt_tempSim / gt_tempOut;
-                gtanswers.push_back(make_pair(gt_tempSim / gt_tempOut, gt_tempNode));
+                gtvalues[gt_tempNode] = gt_tempSim;
                 unnm_gtanswers.push_back(make_pair(gt_tempSim, gt_tempNode));
                 gtCnt++;
             }
         }
 
-        sort(gtanswers.begin(), gtanswers.end(), greater<pair<double, uint> >());
         sort(unnm_gtanswers.begin(), unnm_gtanswers.end(), greater<pair<double, uint> >());
         uint precision_num = 50;
         if (gtCnt < 50)
@@ -263,27 +252,22 @@ metric::metric(string filedir, string filelabel, string algoname, long querynum,
         uint realCnt = 0;
         uint algo_tempNode;
         double algo_tempSim;
-        double algo_tempOutSize;
         while (algoin >> algo_tempNode >> algo_tempSim)
         {
             algoNodes.push_back(algo_tempNode);
-            algo_tempOutSize = g.getOutVertWeight(algo_tempNode);
-            // algo_tempOutSize = 1.0;
-            if (algo_tempOutSize > 0.0)
+            if (algo_tempSim > 0.0)
             {
-                algovalues[algo_tempNode] = algo_tempSim / algo_tempOutSize;
-                algoanswers.push_back(make_pair((algo_tempSim / algo_tempOutSize), algo_tempNode));
+                algovalues[algo_tempNode] = algo_tempSim;
                 unnm_algoanswers.push_back(make_pair(algo_tempSim, algo_tempNode));
                 algocheck[algo_tempNode] = true;
                 realCnt++;
             }
         }
-        sort(algoanswers.begin(), algoanswers.end(), greater<pair<double, uint> >());
         sort(unnm_algoanswers.begin(), unnm_algoanswers.end(), greater<pair<double, uint> >());
         uint topknum = precision_num;
-        if ((uint)algoanswers.size() < topknum)
+        if ((uint)unnm_algoanswers.size() < topknum)
         {
-            topknum = (uint)algoanswers.size();
+            topknum = (uint)unnm_algoanswers.size();
         }
 
         for (uint x = 0; x < topknum; x++)
@@ -308,7 +292,6 @@ metric::metric(string filedir, string filelabel, string algoname, long querynum,
                 }
             }
         }
-
         avg_conductance += conductance();
         avg_l1_error += cal_l1Error();
         avg_pre50 += calPrecision();
@@ -317,8 +300,6 @@ metric::metric(string filedir, string filelabel, string algoname, long querynum,
         delete[] algovalues;
         delete[] gtvalues;
         delete[] algocheck;
-        algoanswers.clear();
-        gtanswers.clear();
         unnm_gtanswers.clear();
         unnm_algoanswers.clear();
         topk_algo_Nodes.clear();
@@ -412,10 +393,7 @@ int main(int argc, char **argv)
         }
         i++;
     }
-    if (algoname == "MSCC")
-        g.inputGraph(filedir, filelabel, eps, 1);
-    else
-        g.inputGraph(filedir, filelabel, eps, 0);
+    g = Graph(filedir, filelabel);
     uint query_node;
     ifstream query_file;
     query_file.open("./query/" + filelabel + ".query");
