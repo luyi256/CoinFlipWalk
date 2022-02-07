@@ -216,7 +216,8 @@ metric::metric(string filedir, string filelabel, string algoname, long querynum,
 
         stringstream ss_algo;
         ss_algo << "./result/" << algoname << "/" << filelabel << "/" << L << "/" << eps << "/" << u << ".txt";
-        ifstream algoin(ss_algo.str());
+        cout<<ss_algo.str()<<endl;//hanzhi
+	ifstream algoin(ss_algo.str());
         if (!algoin)
         {
             cout << "ERROR:unable to open result file " << ss_algo.str() << endl;
@@ -310,7 +311,7 @@ metric::metric(string filedir, string filelabel, string algoname, long querynum,
     avg_max_additive_error /= (double)querynum;
     cout << "eps = " << eps << endl;
     cout << "Avg l1-error = " << avg_l1_error << endl;
-    cout << "Avg normalized precision@50 = " << avg_pre50 << endl;
+    cout << "Avg precision@50 = " << avg_pre50 << endl;
     cout << "Avg conductance = " << avg_conductance << endl;
     cout << "Avg max-additive-error = " << avg_max_additive_error << endl;
     stringstream ss_run;

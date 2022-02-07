@@ -547,6 +547,8 @@ public:
 	}
 };
 
+
+/*
 class MCSS : public SimStruct
 {
 public:
@@ -566,8 +568,12 @@ public:
 		//当前层该点的probability
 		prob[0] = new double[vert];
 		prob[1] = new double[vert];
-
 		final_count = 0;
+		
+		//final_p = new double[vert];//hanzhi
+		//final_node = new uint[vert];//hanzhi
+		//final_exist = new uint[vert];//hanzhi
+
 		for (uint i = 0; i < vert; i++)
 		{
 			cs_exist[0][i] = 0;
@@ -576,6 +582,9 @@ public:
 			candidate_set[1][i] = 0;
 			prob[0][i] = 0;
 			prob[1][i] = 0;
+			//final_p[i] = 0;//hanzhi
+			//final_node[i] = 0;//hanzhi
+			//final_exist[i] = 0;//hanzhi
 		}
 	}
 	~MCSS()
@@ -586,10 +595,14 @@ public:
 		delete[] candidate_set[1];
 		delete[] prob[0];
 		delete[] prob[1];
+		//delete[] final_p;//hanzhi
+		//delete[] final_node;//hanzhi
+		//delete[] final_exist;//hanzhi
 	}
 
 	void query(uint u)
 	{
+		uint cnt1, cnt2;
 		uint levelID = L % 2;
 		for (uint j = 0; j < final_count; j++)
 		{
@@ -597,20 +610,39 @@ public:
 			prob[levelID][node] = 0;
 			cs_exist[levelID][node] = 0;
 		}
+		//for (uint j = 0; j < final_count; j++)//hanzhi
+		//{
+		//	final_p[final_node[j]] = 0;
+		//	final_exist[final_node[j]] = 0;
+		//}
 		final_count = 0;
-
-		uint nr = L / eps * 4;
-		cout << "samples=" << nr << endl;
+		
 		uint tempLevel = 0;
-		candidate_set[0][0] = u;
-		candidate_count[0] = 1;
-		candidate_count[1] = 0;
-		prob[tempLevel][u] = 1.0;
+		//uint nr = L / eps * 4;//hanzhi
+		uint nr = 0.1*L / eps * 4;//hanzhi
+		cout << "samples=" << nr << endl;
+		candidate_set[0][0] = u;//hanzhi
+		candidate_count[0] = 1;//hanzhi
+		candidate_count[1] = 0;//hanzhi
+		prob[tempLevel][u] = 1.0;//hanzhi
+		double lastpisum=1.0;
+		//for (uint k = 0; k < nr; k++)//hanzhi
+		//{
+			//cout<<"k="<<k<<endl;
+			//uint tempLevel = 0;//hanzhi
+			//candidate_set[0][0] = u;//hanzhi
+			//candidate_count[0] = 1;//hanzhi
+			//candidate_count[1] = 0;//hanzhi
+			//prob[0][u] = 1.0;//hanzhi
+		
 		while (tempLevel < L)
 		{
+			double temppisum=0;
+			cout<<"tempLevel="<<tempLevel<<endl;
 			uint tempLevelID = tempLevel % 2;
 			uint newLevelID = (tempLevel + 1) % 2;
 			uint candidateCnt = candidate_count[tempLevelID];
+			cout<<"candidateCnt="<<candidateCnt<<endl;
 			if (candidateCnt == 0)
 				break;
 			candidate_count[tempLevelID] = 0;
@@ -620,16 +652,40 @@ public:
 				double tempP = prob[tempLevelID][tempNode];
 				cs_exist[tempLevelID][tempNode] = 0;
 				prob[tempLevelID][tempNode] = 0;
+					
+				//if(tempLevel==L){//hanzhi
+				//	if(final_exist[tempNode]==0){
+				//		final_exist[tempNode]=1;
+				//		final_node[final_count++]=tempNode;
+				//	}
+					//cout<<"tempLevel="<<tempLevel<<" tempP="<<tempP<<" tempNode="<<tempNode<<endl;
+				//	final_p[tempNode]+=tempP/(double)nr;
+				//	continue;
+				//}
+
+				//if(tempP<eps){//hanzhi
+				//	continue;//hanzhi
+				//}//hanzhi
+					
 				uint outSize = g.outSizeList[tempNode];
 				double outVertWt = g.outWeightList[tempNode];
-
+				double incre = tempP / outVertWt;
+				//cout<<"tempP="<<tempP<<endl;
+				//cout<<"outVertWt="<<outVertWt<<endl;
+				//cout<<"incre="<<incre<<endl;
 				for (auto setIt = g.neighborList[tempNode].begin(); setIt != g.neighborList[tempNode].end(); setIt++)
 				{
-					int setID = setIt->first; //如果是平均度的情况怎么处理
-					double incre = tempP / outVertWt;
+					//int setID = setIt->first;
+					int setID = setIt->first-1;
 					double increMax = incre * (pow(2, setID));
-					if (increMax > 0.5 || fabs(increMax - 0.5) < 1e-6)
+					double pmax=pow(2,setID)/outVertWt;//the maximum sampling probability in this subset;
+					//cout<<"setID="<<setID<<endl;//hanzhi
+					//cout<<"increMax="<<increMax<<endl;//hanzhi
+					// if (increMax > 0.5 || fabs(increMax - 0.5) < 1e-6)
+					//if (increMax > eps)
+					if (increMax >= 1.0)
 					{
+						//cout<<"increMax="<<increMax<<endl;
 						for (auto nodeIt = setIt->second.begin(); nodeIt != setIt->second.end(); nodeIt++)
 						{
 							uint newNode = nodeIt->id;
@@ -643,34 +699,312 @@ public:
 					}
 					else
 					{
+						//cout<<"else"<<endl;
 						uint subsetSize = setIt->second.size();
-						std::default_random_engine generator;
-						std::binomial_distribution<int> distribution(subsetSize, increMax / 0.5);
-						for (uint k = 0; k < nr; k++)
+						//cout<<"subsetSize="<<subsetSize<<endl;//hanzhi
+						// int seed = chrono::system_clock::now().time_since_epoch().count();
+						// std::default_random_engine generator(seed);
+						// std::binomial_distribution<int> distribution(subsetSize, increMax);
+						uint curtnr=(double)nr*tempP/(lastpisum);
+						//cout<<"curtnr="<<curtnr<<endl;
+						for (uint k = 0; k < curtnr; k++)
 						{
-							int rbio = distribution(generator);
-							for (uint m = 0; m < rbio; m++)
+							int curti=0;//hanzhi
+							//cout<<"k="<<k<<endl;//hanzhi
+							//	int rbio = distribution(generator);
+							// for (uint m = 0; m < rbio; m++)
+							//for (uint m = 0; m < subsetSize; m++)
+							while(curti<subsetSize)
 							{
-								uint nodeidx = ceil(g.R.drand() * subsetSize);
+								int seed_geo = chrono::system_clock::now().time_since_epoch().count();//hanzhi
+								std::default_random_engine generator(seed_geo);//hanzhi
+								//std::geometric_distribution<int> distribution(increMax);//hanzhi
+								std::geometric_distribution<int> distribution(pmax);//hanzhi
+								int rgeo=distribution(generator);//hanzhi
+								curti+=rgeo;//hanzhi
+								//if(k<10){//hanzhi
+									//cout<<"curti="<<curti<<" rgeo="<<rgeo<<" increMax="<<increMax<<endl;//hanzhi								
+									//cout<<"k="<<k<<" curti="<<curti<<" rgeo="<<rgeo<<" pmax="<<pmax<<endl;//hanzhi								
+								//}//hanzhi
+								if(curti>=subsetSize){//hanzhi
+									//cout<<"break"<<endl;
+									break;//hanzhi
+								}//hanzhi
+
+								// uint nodeidx = floor(g.R.drand() * subsetSize);
+								//uint nodeidx = m;
+								uint nodeidx = curti;
 								double r = g.R.drand();
+								//cout<<"r="<<r<<endl;
+								//if (r >= increMax)
+								//{
+								//	continue;
+								//}
+								//r = g.R.drand();
 								node tmp = setIt->second[nodeidx];
+								//cout<<"tmp.w="<<tmp.w<<endl;//hanzhi
 								if (r < tmp.w / pow(2, setID))
 								{
-									prob[newLevelID][tmp.id] += 0.5 / nr;
+									//prob[newLevelID][tmp.id] += 1.0 / nr;
+									//prob[newLevelID][tmp.id] += 1.0;
+									//prob[newLevelID][tmp.id] += tempP;//hanzhi
+									//prob[newLevelID][tmp.id] += tempP/(double)nr;
+									temppisum+=tempP/(double)nr;
+									//cout<<"tempP="<<tempP<<" nr="<<nr<<" "<<tempP/(double)nr<<" tmp.id="<<tmp.id<<" "<<prob[newLevelID][tmp.id]<<endl;
+									//cout<<prob[newLevelID][tmp.id]<<endl;
+									if (cs_exist[newLevelID][tmp.id] == 0)
+									//if ((prob[newLevelID][tmp.id]>eps) && (cs_exist[newLevelID][tmp.id] == 0))
+									{
+										cs_exist[newLevelID][tmp.id] = 1;
+										candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
+										//cout<<"tmp.id="<<tmp.id<<" count="<<candidate_count[newLevelID]<<endl;
+									}
+								}
+								curti+=1;//hanzhi
+							}
+						}
+					}
+				}
+			}
+			lastpisum=temppisum;
+			tempLevel++;
+			//if(k>1) break;
+		}
+		if(tempLevel<L){//hanzhi
+			final_count=0;
+		}
+		else{//hanzhi
+			final_count = candidate_count[levelID];//hanzhi
+		}
+		cout<<"final_count="<<final_count<<endl;
+	}
+	void update()
+	{
+		ifstream opfile(g.filedir + "/" + g.filelabel + ".op", ios::in);
+		double tottime = 0;
+		int opnum = 0;
+		uint s, t;
+		double w;
+		while (opfile >> s >> t >> w)
+		{
+			clock_t t0 = clock();
+			g.add(s, t, w);
+			clock_t t1 = clock();
+			tottime += (t1 - t0) / (double)CLOCKS_PER_SEC;
+			opnum++;
+		}
+		cout << g.filelabel << " avg update time: " << tottime / opnum << endl;
+		opfile.close();
+	}
+};
+*/
+
+
+class MCSS : public SimStruct
+{
+public:
+	subsetGraph g;
+	MCSS(string filedir, string filelabel, uint step) : SimStruct(filedir, filelabel, step)
+	{
+		g = subsetGraph(filedir, filelabel);
+		uint vert = g.n;
+		//是否存在在当前层中的candidate_set中
+		cs_exist[0] = new uint[vert];
+		cs_exist[1] = new uint[vert];
+		//当前层candidate_set的点
+		candidate_set[0] = new uint[vert];
+		candidate_set[1] = new uint[vert];
+		candidate_count[0] = 0;
+		candidate_count[1] = 0;
+		//当前层该点的probability
+		prob[0] = new double[vert];
+		prob[1] = new double[vert];
+		
+		final_p = new double[vert];//hanzhi
+		final_node = new uint[vert];//hanzhi
+		final_exist = new uint[vert];//hanzhi
+		final_count = 0;//hanzhi
+
+		for (uint i = 0; i < vert; i++)
+		{
+			cs_exist[0][i] = 0;
+			cs_exist[1][i] = 0;
+			candidate_set[0][i] = 0;
+			candidate_set[1][i] = 0;
+			prob[0][i] = 0;
+			prob[1][i] = 0;
+			final_p[i] = 0;//hanzhi
+			final_node[i] = 0;//hanzhi
+			final_exist[i] = 0;//hanzhi
+		}
+	}
+	~MCSS()
+	{
+		delete[] cs_exist[0];
+		delete[] cs_exist[1];
+		delete[] candidate_set[0];
+		delete[] candidate_set[1];
+		delete[] prob[0];
+		delete[] prob[1];
+		delete[] final_p;//hanzhi
+		delete[] final_node;//hanzhi
+		delete[] final_exist;//hanzhi
+	}
+
+	void query(uint u)
+	{
+		uint cnt1, cnt2;
+		uint levelID = L % 2;
+		//for (uint j = 0; j < final_count; j++)
+		//{
+		//	uint node = candidate_set[levelID][j];
+		//	prob[levelID][node] = 0;
+		//	cs_exist[levelID][node] = 0;
+		//}
+		for (uint j = 0; j < final_count; j++)//hanzhi
+		{
+			final_p[final_node[j]] = 0;
+			final_exist[final_node[j]] = 0;
+		}
+		final_count = 0;
+
+		//uint nr = L / eps * 4;//hanzhi
+		uint nr = 0.1*L / eps * 4;//hanzhi
+		cout << "samples=" << nr << endl;
+		//candidate_set[0][0] = u;//hanzhi
+		//candidate_count[0] = 1;//hanzhi
+		//candidate_count[1] = 0;//hanzhi
+		//prob[tempLevel][u] = 1.0;//hanzhi
+		for (uint k = 0; k < nr; k++)//hanzhi
+		{
+			//cout<<"k="<<k<<endl;
+			uint tempLevel = 0;
+			candidate_set[0][0] = u;//hanzhi
+			candidate_count[0] = 1;//hanzhi
+			candidate_count[1] = 0;//hanzhi
+			prob[0][u] = 1.0;//hanzhi
+			while (tempLevel <= L)
+			{
+				//cout<<"tempLevel="<<tempLevel<<endl;
+				uint tempLevelID = tempLevel % 2;
+				uint newLevelID = (tempLevel + 1) % 2;
+				uint candidateCnt = candidate_count[tempLevelID];
+				//cout<<"candidateCnt="<<candidateCnt<<endl;
+				if (candidateCnt == 0)
+					break;
+				candidate_count[tempLevelID] = 0;
+				for (uint j = 0; j < candidateCnt; j++)
+				{
+					uint tempNode = candidate_set[tempLevelID][j];
+					double tempP = prob[tempLevelID][tempNode];
+					cs_exist[tempLevelID][tempNode] = 0;
+					prob[tempLevelID][tempNode] = 0;
+					
+					if(tempLevel==L){
+						if(final_exist[tempNode]==0){
+							final_exist[tempNode]=1;
+							final_node[final_count++]=tempNode;
+						}
+						//cout<<"tempLevel="<<tempLevel<<" tempP="<<tempP<<" tempNode="<<tempNode<<endl;
+						final_p[tempNode]+=tempP/(double)nr;
+						continue;
+					}
+
+					//if(tempP<eps){//hanzhi
+					//	continue;//hanzhi
+					//}//hanzhi
+					
+					uint outSize = g.outSizeList[tempNode];
+					double outVertWt = g.outWeightList[tempNode];
+					double incre = tempP / outVertWt;
+					//cout<<"tempP="<<tempP<<endl;
+					//cout<<"outVertWt="<<outVertWt<<endl;
+					//cout<<"incre="<<incre<<endl;
+					for (auto setIt = g.neighborList[tempNode].begin(); setIt != g.neighborList[tempNode].end(); setIt++)
+					{
+						int setID = setIt->first;
+						double increMax = incre * (pow(2, setID));
+						double pmax=pow(2,setID)/outVertWt;//the maximum sampling probability in this subset;
+						//cout<<"setID="<<setID<<endl;//hanzhi
+						//cout<<"increMax="<<increMax<<endl;//hanzhi
+						// if (increMax > 0.5 || fabs(increMax - 0.5) < 1e-6)
+						//if (increMax > eps)
+						if (increMax >= 1.0)
+						{
+							//cout<<"increMax="<<increMax<<endl;
+							for (auto nodeIt = setIt->second.begin(); nodeIt != setIt->second.end(); nodeIt++)
+							{
+								uint newNode = nodeIt->id;
+								prob[newLevelID][newNode] += incre * nodeIt->w;
+								if (cs_exist[newLevelID][newNode] == 0)
+								{
+									cs_exist[newLevelID][newNode] = 1;
+									candidate_set[newLevelID][candidate_count[newLevelID]++] = newNode;
+								}
+							}
+						}
+						else
+						{
+							uint subsetSize = setIt->second.size();
+							//cout<<"subsetSize="<<subsetSize<<endl;//hanzhi
+							// int seed = chrono::system_clock::now().time_since_epoch().count();
+							// std::default_random_engine generator(seed);
+							// std::binomial_distribution<int> distribution(subsetSize, increMax);
+							//for (uint k = 0; k < nr; k++)
+							//{
+							int curti=0;//hanzhi
+							//cout<<"k="<<k<<endl;//hanzhi
+							//	int rbio = distribution(generator);
+							// for (uint m = 0; m < rbio; m++)
+							//for (uint m = 0; m < subsetSize; m++)
+							while(curti<subsetSize)
+							{
+								int seed_geo = chrono::system_clock::now().time_since_epoch().count();//hanzhi
+								std::default_random_engine generator(seed_geo);//hanzhi
+								//std::geometric_distribution<int> distribution(increMax);//hanzhi
+								std::geometric_distribution<int> distribution(pmax);//hanzhi
+								int rgeo=distribution(generator);//hanzhi
+								curti+=rgeo;//hanzhi
+								//if(k<10){//hanzhi
+								//cout<<"curti="<<curti<<" rgeo="<<rgeo<<" increMax="<<increMax<<endl;//hanzhi								
+								//}//hanzhi
+								if(curti>=subsetSize){//hanzhi
+									break;//hanzhi
+								}//hanzhi
+
+								// uint nodeidx = floor(g.R.drand() * subsetSize);
+								//uint nodeidx = m;
+								uint nodeidx = curti;
+								double r = g.R.drand();
+								//cout<<"r="<<r<<endl;
+								//if (r >= increMax)
+								//{
+								//	continue;
+								//}
+								//r = g.R.drand();
+								node tmp = setIt->second[nodeidx];
+								//cout<<"tmp.w="<<tmp.w<<endl;//hanzhi
+								if (r < tmp.w / pow(2, setID))
+								{
+									//prob[newLevelID][tmp.id] += 1.0 / nr;
+									//prob[newLevelID][tmp.id] += 1.0;
+									prob[newLevelID][tmp.id] += tempP;
 									if (cs_exist[newLevelID][tmp.id] == 0)
 									{
 										cs_exist[newLevelID][tmp.id] = 1;
 										candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
 									}
 								}
+								curti+=1;//hanzhi
 							}
 						}
 					}
 				}
+				tempLevel++;
 			}
-			tempLevel++;
+			//if(k>1) break;
 		}
-		final_count = candidate_count[levelID];
+		//final_count = candidate_count[levelID];//hanzhi
 	}
 	void update()
 	{

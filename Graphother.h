@@ -335,16 +335,10 @@ public:
 			outSizeList[i] = outSize;
 			outWeightList[i] = outWeight;
 			double gap = outWeight / outSize;
-			int minSubset = floor(log2(gap)) + 1;
 			for (uint j = 0; j < outSize; j++)
 			{
-				if (neighbor[j].w < gap || fabs(neighbor[j].w - gap) < 1e-6)
-					neighborList[i][minSubset].push_back(neighbor[j]);
-				else
-				{
-					int subset = floor(log2(neighbor[j].w)) + 1;
-					neighborList[i][subset].push_back(neighbor[j]);
-				}
+				int subset = floor(log2(neighbor[j].w)) + 1;
+				neighborList[i][subset].push_back(neighbor[j]);
 			}
 			totdeg += outWeight;
 		}
@@ -354,7 +348,7 @@ public:
 	}
 	virtual void add(uint s, uint t, double w)
 	{
-		int subset = floor(log2(w));
+		int subset = floor(log2(w)) + 1;
 		neighborList[s][subset].push_back(node(t, w));
 		if (outSizeList.find(s) != outSizeList.end())
 		{
