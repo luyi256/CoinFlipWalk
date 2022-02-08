@@ -37,10 +37,10 @@ int main(int argc, char **argv)
     string filedir, filelabel, algoname;
     char *endptr;
     long querynum = 10;
-    //long querynum=1;
+    // long querynum=1;
     vector<double> epss;
-    //uint L;//hanzhi
-    uint L=10;	//hanzhi
+    // uint L;//hanzhi
+    uint L = 10; // hanzhi
     while (i < argc)
     {
         if (!strcmp(argv[i], "-d"))
@@ -172,23 +172,23 @@ int main(int argc, char **argv)
             if (!fout)
                 cout << "Fail to open the writed file" << endl;
 
-            //if (algoname == "MCSS")
-            if(false)
-	    {
-                uint levelID = L % 2;
-                for (uint j = 0; j < sim->final_count; j++)
-                {
-            	    uint node = sim->candidate_set[levelID][j];
-                    fout << node << " " << sim->prob[levelID][node] << endl;
-                }
+            // if (false)
+            // {
+            //     uint levelID = L % 2;
+            //     for (uint j = 0; j < sim->final_count; j++)
+            //     {
+            //         uint node = sim->candidate_set[levelID][j];
+            //         fout << node << " " << sim->prob[levelID][node] << endl;
+            //     }
+            // }
+            // else
+            // {
+            cout << "sim->final_count=" << sim->final_count << endl;
+            for (uint j = 0; j < sim->final_count; j++)
+            {
+                fout << sim->final_node[j] << " " << sim->final_p[sim->final_node[j]] << endl;
             }
-            else{
-        	cout<<"sim->final_count="<<sim->final_count<<endl; 
-	    	for (uint j = 0; j < sim->final_count; j++)
-            	{
-                	fout << sim->final_node[j] << " " << sim->final_p[sim->final_node[j]] << endl;
-            	}
-	    }
+            // }
             fout.close();
             // samplerate += sim->actual_sample / sample;
         }
