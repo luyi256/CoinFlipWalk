@@ -681,7 +681,7 @@ public:
 								if (r < tmp.w / pow(2, setID))
 								{
 									uint nodeidx = tmp.id;
-									prob[newLevelID][nodeidx] += tempP;
+									prob[newLevelID][nodeidx] += tempP/nr;
 									if (cs_exist[newLevelID][nodeidx] == 0)
 									{
 										cs_exist[newLevelID][nodeidx] = 1;
