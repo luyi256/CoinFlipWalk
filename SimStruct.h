@@ -678,10 +678,10 @@ public:
 								int curti = ceil(g.R.drand() * subsetSize);
 								node tmp = setIt->second[curti];
 								double r = g.R.drand();
-								uint nodeidx=tmp.id;
+								uint nodeidx = tmp.id;
 								if (r < tmp.w / pow(2, setID))
 								{
-									prob[newLevelID][nodeidx] += tempP;
+									prob[newLevelID][nodeidx] += tempP / nr;
 									if (cs_exist[newLevelID][nodeidx] == 0)
 									{
 										cs_exist[newLevelID][nodeidx] = 1;
