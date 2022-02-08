@@ -600,7 +600,6 @@ public:
 
 	void query(uint u)
 	{
-		uint cnt1, cnt2;
 		uint levelID = L % 2;
 		for (uint j = 0; j < final_count; j++)
 		{
@@ -673,11 +672,10 @@ public:
 
 						for (uint k = 0; k < nr; k++)
 						{
-							int curti = 0;
+							int rgeo = distribution(generator);
+							int curti = rgeo;
 							while (curti < subsetSize)
 							{
-								int rgeo = distribution(generator);
-								curti += rgeo;
 								node tmp = setIt->second[curti];
 								double r = g.R.drand();
 								if (r < tmp.w / pow(2, setID))
@@ -691,6 +689,8 @@ public:
 									}
 								}
 								curti += 1;
+								rgeo = distribution(generator);
+								curti += rgeo;
 							}
 						}
 					}
