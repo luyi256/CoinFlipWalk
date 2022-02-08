@@ -669,17 +669,20 @@ public:
 						uint subsetSize = setIt->second.size();
 						int seed = chrono::system_clock::now().time_since_epoch().count();
 						std::default_random_engine generator(seed);
-						std::binomial_distribution<int> distribution(subsetSize, pmax);
+						std::geometric_distribution<int> distribution(pmax);
+
 						for (uint k = 0; k < nr; k++)
 						{
-							int rbio = distribution(generator);
-							for (int m = 0; m < rbio; m++)
+							int curti = 0;
+							while (curti < subsetSize)
 							{
-								uint nodeidx = ceil(g.R.drand() * subsetSize);
-								node tmp = setIt->second[nodeidx];
-								double r=g.R.drand();
+								int rgeo = distribution(generator);
+								curti += rgeo;
+								node tmp = setIt->second[curti];
+								double r = g.R.drand();
 								if (r < tmp.w / pow(2, setID))
 								{
+									uint nodeidx = tmp.id;
 									prob[newLevelID][nodeidx] += tempP;
 									if (cs_exist[newLevelID][nodeidx] == 0)
 									{
@@ -687,6 +690,7 @@ public:
 										candidate_set[newLevelID][candidate_count[newLevelID]++] = nodeidx;
 									}
 								}
+								curti += 1;
 							}
 						}
 					}
