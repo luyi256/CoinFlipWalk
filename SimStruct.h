@@ -675,9 +675,10 @@ public:
 							int rbio = distribution(generator);
 							for (int m = 0; m < rbio; m++)
 							{
-								uint nodeidx = ceil(g.R.drand() * subsetSize);
-								node tmp = setIt->second[nodeidx];
-								double r=g.R.drand();
+								int curti = ceil(g.R.drand() * subsetSize);
+								node tmp = setIt->second[curti];
+								double r = g.R.drand();
+								uint nodeidx=tmp.id;
 								if (r < tmp.w / pow(2, setID))
 								{
 									prob[newLevelID][nodeidx] += tempP;
