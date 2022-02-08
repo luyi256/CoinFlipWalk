@@ -46,6 +46,7 @@ public:
 	uint *cs_exist[2];
 	uint *candidate_set[2];
 	double *prob[2];
+	uint candidateNum;
 	SimStruct(string filedir, string filelabel, uint step)
 	{
 		L = step;
@@ -551,6 +552,7 @@ class MCSS : public SimStruct
 {
 public:
 	subsetGraph g;
+	uint candidateNum;
 	MCSS(string filedir, string filelabel, uint step) : SimStruct(filedir, filelabel, step)
 	{
 		g = subsetGraph(filedir, filelabel);
@@ -600,6 +602,7 @@ public:
 
 	void query(uint u)
 	{
+		candidateNum = 0;
 		uint levelID = L % 2;
 		for (uint j = 0; j < final_count; j++)
 		{
@@ -623,6 +626,8 @@ public:
 			if (candidateCnt == 0)
 				break;
 			candidate_count[tempLevelID] = 0;
+			if (tempLevel != L)
+				candidateNum += candidateCnt;
 			for (uint j = 0; j < candidateCnt; j++)
 			{
 				uint tempNode = candidate_set[tempLevelID][j];
@@ -681,7 +686,7 @@ public:
 								if (r < tmp.w / pow(2, setID))
 								{
 									uint nodeidx = tmp.id;
-									prob[newLevelID][nodeidx] += tempP/nr;
+									prob[newLevelID][nodeidx] += tempP / nr;
 									if (cs_exist[newLevelID][nodeidx] == 0)
 									{
 										cs_exist[newLevelID][nodeidx] = 1;
@@ -698,6 +703,7 @@ public:
 			}
 			tempLevel++;
 		}
+		cout << "candidateNum:" << candidateNum << endl;
 	}
 
 	void update()
