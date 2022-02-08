@@ -567,10 +567,10 @@ public:
 		prob[0] = new double[vert];
 		prob[1] = new double[vert];
 
-		final_p = new double[vert];	  // hanzhi
-		final_node = new uint[vert];  // hanzhi
-		final_exist = new uint[vert]; // hanzhi
-		final_count = 0;			  // hanzhi
+		final_p = new double[vert];
+		final_node = new uint[vert];
+		final_exist = new uint[vert];
+		final_count = 0;
 
 		for (uint i = 0; i < vert; i++)
 		{
@@ -580,9 +580,9 @@ public:
 			candidate_set[1][i] = 0;
 			prob[0][i] = 0;
 			prob[1][i] = 0;
-			final_p[i] = 0;		// hanzhi
-			final_node[i] = 0;	// hanzhi
-			final_exist[i] = 0; // hanzhi
+			final_p[i] = 0;
+			final_node[i] = 0;
+			final_exist[i] = 0;
 		}
 	}
 	~MCSS()
@@ -593,121 +593,107 @@ public:
 		delete[] candidate_set[1];
 		delete[] prob[0];
 		delete[] prob[1];
-		delete[] final_p;	  // hanzhi
-		delete[] final_node;  // hanzhi
-		delete[] final_exist; // hanzhi
+		delete[] final_p;
+		delete[] final_node;
+		delete[] final_exist;
 	}
 
 	void query(uint u)
 	{
 		uint cnt1, cnt2;
 		uint levelID = L % 2;
-		for (uint j = 0; j < final_count; j++) // hanzhi
+		for (uint j = 0; j < final_count; j++)
 		{
 			final_p[final_node[j]] = 0;
 			final_exist[final_node[j]] = 0;
 		}
 		final_count = 0;
-		uint nr = 0.1 * L / eps * 4; // hanzhi
+		uint nr = 0.1 * L / eps * 4;
 		cout << "samples=" << nr << endl;
-		for (uint k = 0; k < nr; k++) // hanzhi
+		uint tempLevel = 0;
+		candidate_set[0][0] = u;
+		candidate_count[0] = 1;
+		candidate_count[1] = 0;
+		prob[0][u] = 1.0;
+		while (tempLevel <= L)
 		{
-			uint tempLevel = 0;
-			candidate_set[0][0] = u; // hanzhi
-			candidate_count[0] = 1;	 // hanzhi
-			candidate_count[1] = 0;	 // hanzhi
-			prob[0][u] = 1.0;		 // hanzhi
-			while (tempLevel <= L)
-			{
-				uint tempLevelID = tempLevel % 2;
-				uint newLevelID = (tempLevel + 1) % 2;
-				uint candidateCnt = candidate_count[tempLevelID];
-				if (candidateCnt == 0)
-					break;
-				candidate_count[tempLevelID] = 0;
-				for (uint j = 0; j < candidateCnt; j++)
-				{
-					uint tempNode = candidate_set[tempLevelID][j];
-					double tempP = prob[tempLevelID][tempNode];
-					cs_exist[tempLevelID][tempNode] = 0;
-					prob[tempLevelID][tempNode] = 0;
 
-					if (tempLevel == L)
+			uint tempLevelID = tempLevel % 2;
+			uint newLevelID = (tempLevel + 1) % 2;
+			uint candidateCnt = candidate_count[tempLevelID];
+			if (candidateCnt == 0)
+				break;
+			candidate_count[tempLevelID] = 0;
+			for (uint j = 0; j < candidateCnt; j++)
+			{
+				uint tempNode = candidate_set[tempLevelID][j];
+				double tempP = prob[tempLevelID][tempNode];
+				cs_exist[tempLevelID][tempNode] = 0;
+				prob[tempLevelID][tempNode] = 0;
+
+				if (tempLevel == L)
+				{
+					if (final_exist[tempNode] == 0)
 					{
-						if (final_exist[tempNode] == 0)
-						{
-							final_exist[tempNode] = 1;
-							final_node[final_count++] = tempNode;
-						}
-						// cout<<"tempLevel="<<tempLevel<<" tempP="<<tempP<<" tempNode="<<tempNode<<endl;
-						final_p[tempNode] += tempP / (double)nr;
-						continue;
+						final_exist[tempNode] = 1;
+						final_node[final_count++] = tempNode;
 					}
-					uint outSize = g.outSizeList[tempNode];
-					double outVertWt = g.outWeightList[tempNode];
-					double incre = tempP / outVertWt;
-					for (auto setIt = g.neighborList[tempNode].begin(); setIt != g.neighborList[tempNode].end(); setIt++)
+					// cout<<"tempLevel="<<tempLevel<<" tempP="<<tempP<<" tempNode="<<tempNode<<endl;
+					final_p[tempNode] = tempP;
+					continue;
+				}
+				uint outSize = g.outSizeList[tempNode];
+				double outVertWt = g.outWeightList[tempNode];
+				double incre = tempP / outVertWt;
+				for (auto setIt = g.neighborList[tempNode].begin(); setIt != g.neighborList[tempNode].end(); setIt++)
+				{
+					int setID = setIt->first;
+					double increMax = incre * (pow(2, setID));
+
+					if (increMax >= 1.0)
 					{
-						int setID = setIt->first;
-						double increMax = incre * (pow(2, setID));
-						double pmax = pow(2, setID) / outVertWt; // the maximum sampling probability in this subset;
-						if (increMax >= 1.0)
+						for (auto nodeIt = setIt->second.begin(); nodeIt != setIt->second.end(); nodeIt++)
 						{
-							for (auto nodeIt = setIt->second.begin(); nodeIt != setIt->second.end(); nodeIt++)
+							uint newNode = nodeIt->id;
+							prob[newLevelID][newNode] += incre * nodeIt->w;
+							if (cs_exist[newLevelID][newNode] == 0)
 							{
-								uint newNode = nodeIt->id;
-								prob[newLevelID][newNode] += incre * nodeIt->w;
-								if (cs_exist[newLevelID][newNode] == 0)
-								{
-									cs_exist[newLevelID][newNode] = 1;
-									candidate_set[newLevelID][candidate_count[newLevelID]++] = newNode;
-								}
+								cs_exist[newLevelID][newNode] = 1;
+								candidate_set[newLevelID][candidate_count[newLevelID]++] = newNode;
 							}
 						}
-						else
+					}
+					else
+					{
+						double pmax = pow(2, setID) / outVertWt; // the maximum sampling probability in this subset;
+						uint subsetSize = setIt->second.size();
+						int seed = chrono::system_clock::now().time_since_epoch().count();
+						std::default_random_engine generator(seed);
+						std::binomial_distribution<int> distribution(subsetSize, pmax);
+						for (uint k = 0; k < nr; k++)
 						{
-							uint subsetSize = setIt->second.size();
-							// cout<<"subsetSize="<<subsetSize<<endl;//hanzhi
-							//  int seed = chrono::system_clock::now().time_since_epoch().count();
-							//  std::default_random_engine generator(seed);
-							//  std::binomial_distribution<int> distribution(subsetSize, increMax);
-							// for (uint k = 0; k < nr; k++)
-							//{
-							int curti = 0;
-							while (curti < subsetSize)
+							int rbio = distribution(generator);
+							for (int m = 0; m < rbio; m++)
 							{
-								int seed_geo = chrono::system_clock::now().time_since_epoch().count(); // hanzhi
-								std::default_random_engine generator(seed_geo);						   // hanzhi
-								// std::geometric_distribution<int> distribution(increMax);//hanzhi
-								std::geometric_distribution<int> distribution(pmax); // hanzhi
-								int rgeo = distribution(generator);					 // hanzhi
-								curti += rgeo;
-								if (curti >= subsetSize)
-								{		   // hanzhi
-									break; // hanzhi
-								}		   // hanzhi
-								uint nodeidx = curti;
-								double r = g.R.drand();
+								uint nodeidx = ceil(g.R.drand() * subsetSize);
 								node tmp = setIt->second[nodeidx];
+								double r=g.R.drand();
 								if (r < tmp.w / pow(2, setID))
 								{
-									prob[newLevelID][tmp.id] += tempP;
-									if (cs_exist[newLevelID][tmp.id] == 0)
+									prob[newLevelID][nodeidx] += tempP;
+									if (cs_exist[newLevelID][nodeidx] == 0)
 									{
-										cs_exist[newLevelID][tmp.id] = 1;
-										candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
+										cs_exist[newLevelID][nodeidx] = 1;
+										candidate_set[newLevelID][candidate_count[newLevelID]++] = nodeidx;
 									}
 								}
-								curti += 1; // hanzhi
 							}
 						}
 					}
 				}
-				tempLevel++;
 			}
-			// if(k>1) break;
+			tempLevel++;
 		}
-		// final_count = candidate_count[levelID];//hanzhi
 	}
 
 	void update()
