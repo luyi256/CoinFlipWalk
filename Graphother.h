@@ -50,6 +50,7 @@ public:
 	unordered_map<uint, vector<node> > neighborList;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
+	unordered_map<uint, double> outMaxWeightList;
 	double totdeg;
 	Graph() {}
 	Graph(const string &_filedir, const string &_filelabel)
@@ -154,6 +155,7 @@ public:
 			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
+			double maxW = 0;
 			for (uint j = 0; j < outSize; j++)
 			{
 				uint id;
@@ -162,10 +164,13 @@ public:
 				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
 				neighborList[i].push_back(node(id, w));
 				outWeight += w;
+				if (w > maxW)
+					maxW = w;
 			}
 			outSizeList[i] = outSize;
 			outWeightList[i] = outWeight;
 			totdeg += outWeight;
+			outMaxWeightList[i] = maxW;
 		}
 		neiNumIn.close();
 		neiWeightIn.close();
@@ -174,6 +179,8 @@ public:
 	virtual void add(uint s, uint t, double w)
 	{
 		neighborList[s].push_back(node{t, w});
+		if (outMaxWeightList[s] < w)
+			outMaxWeightList[s] = w;
 		if (outSizeList.find(s) != outSizeList.end())
 		{
 			outSizeList[s]++;

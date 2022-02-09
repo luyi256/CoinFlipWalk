@@ -498,8 +498,7 @@ public:
 	{
 		if (g.outSizeList[u] == 0)
 			return u;
-		uint curt;
-		curt = u;
+		uint curt = u;
 		uint i = 0;
 		while (i++ < len)
 		{
@@ -508,9 +507,9 @@ public:
 				break;
 			while (true)
 			{
-				double j = ceil(g.R.drand() * outSize);
+				double j = floor(g.R.drand() * outSize);
 				double r = g.R.drand();
-				if (r < g.neighborList[curt][j].w / g.outWeightList[curt])
+				if (r < g.neighborList[curt][j].w / g.outMaxWeightList[curt])
 				{
 					curt = g.neighborList[curt][j].id;
 					break;
