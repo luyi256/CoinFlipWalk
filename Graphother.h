@@ -195,8 +195,7 @@ public:
 	{
 		Graph::add(s, t, w);
 		uint outSize = outSizeList[s];
-		BITList[s].resize(int(outSize));
-		BITList[s].updateBIT(outSize - 1, w);
+		BITList[s].add(w);
 	}
 	BITPrefixSumGraph(const string &_filedir, const string &_filelabel) : Graph(_filedir, _filelabel)
 	{

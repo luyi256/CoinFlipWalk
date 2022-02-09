@@ -284,6 +284,7 @@ public:
 	MCPS_BIT(string filedir, string filelabel, uint step) : SimStruct(filedir, filelabel, step)
 	{
 		g = BITPrefixSumGraph(filedir, filelabel);
+		cout << g.BITList.size() << endl;
 		uint vert = g.n;
 		final_p = new double[vert];
 		final_node = new uint[vert];
@@ -328,31 +329,22 @@ public:
 	{
 		if (g.outSizeList[u] == 0)
 			return u;
-		uint curt;
-		curt = u;
+		uint curt = u;
 		uint i = 0;
 		while (i++ < len)
 		{
-			uint outSize = g.outSizeList[curt];
-			if (outSize == 0)
+			if (g.outSizeList[curt] == 0)
 				break;
-			double prefixsum = 0;
 			double r = g.R.drand() * g.outWeightList[curt];
-			for (uint j = 0; j < outSize; j++)
-			{
-				prefixsum += g.neighborList[curt][j].w;
-				if (r < prefixsum)
-				{
-					curt = g.neighborList[curt][j].id;
-					break;
-				}
-			}
+			int nodeno = g.BITList[curt].find(r);
+			curt = g.neighborList[curt][nodeno].id;
 		}
 		return curt;
 	}
 	void update()
 	{
 		ifstream opfile(g.filedir + "/" + g.filelabel + ".op", ios::in);
+
 		double tottime = 0;
 		int opnum = 0;
 		uint s, t;
@@ -713,6 +705,11 @@ public:
 	void update()
 	{
 		ifstream opfile(g.filedir + "/" + g.filelabel + ".op", ios::in);
+		if (!opfile)
+		{
+			cout << "ERROR! no update file." << endl;
+			exit(-1);
+		}
 		double tottime = 0;
 		int opnum = 0;
 		uint s, t;

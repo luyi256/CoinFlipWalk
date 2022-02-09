@@ -20,19 +20,24 @@ public:
             }
             q = q >> 1;
         }
+        if (p == 0)
+            return 0;
         if (k > 0)
             return p;
-        else
-            return p - 1;
+        return p - 1;
     }
-    void resize(int _n)
+    void add(double k) //在尾部加一个k的值
     {
-        if (_n > n)
+        n++;
+        BITree.resize(n + 1);
+        BITree[n] = k;
+        if (n % 2 == 1)
+            return;
+        uint mul = 1;
+        while (n % (mul * 2) == 0)
         {
-            BITree.resize(_n + 1);
-            for (uint j = n + 1; j <= _n; j++)
-                BITree[j] = 0;
-            n = _n;
+            mul *= 2;
+            BITree[n] += BITree[n - mul / 2];
         }
     }
 
