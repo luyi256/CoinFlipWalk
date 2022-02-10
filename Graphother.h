@@ -260,12 +260,10 @@ public:
 	unordered_map<uint, unordered_map<int, vector<node> > > neighborList;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
-	double totdeg;
 	subsetGraph() {}
 	subsetGraph(const string &_filedir, const string &_filelabel)
 	{
 		R = Random();
-		totdeg = 0;
 		filedir = _filedir;
 		filelabel = _filelabel;
 		string neiNode, neiWeight, neiNum, graphAttr;
@@ -346,7 +344,6 @@ public:
 				int subset = floor(log2(neighbor[j].w)) + 1;
 				neighborList[i][subset].push_back(neighbor[j]);
 			}
-			totdeg += outWeight;
 		}
 		neiNumIn.close();
 		neiWeightIn.close();

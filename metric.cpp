@@ -6,13 +6,102 @@
 #include <vector>
 #include <fstream>
 #include <cstring>
-#include <unordered_set>
-#include "Graphother.h"
+#include <unordered_map>
 #include "Random.h"
 #include <random>
 using namespace std;
-Graph g;
+
 vector<uint> query_set;
+
+struct node
+{
+    uint id;
+    double w;
+    node(uint _id, double _w) : id(_id), w(_w) {}
+    node(const node &tmp)
+    {
+        id = tmp.id;
+        w = tmp.w;
+    }
+    node &operator=(const node &tmp)
+    {
+        id = tmp.id;
+        w = tmp.w;
+        return *this;
+    }
+};
+
+class Graph
+{
+public:
+    uint n;
+    string filedir, filelabel;
+    Random R;
+    unordered_map<uint, vector<node> > neighborList;
+    unordered_map<uint, uint> outSizeList;
+    unordered_map<uint, double> outWeightList;
+    double totdeg;
+    Graph() {}
+    Graph(const string &_filedir, const string &_filelabel)
+    {
+        R = Random();
+        totdeg = 0;
+        filedir = _filedir;
+        filelabel = _filelabel;
+        string neiNode, neiWeight, neiNum, graphAttr;
+        neiNode = filedir + filelabel + ".outEdges";
+        neiWeight = filedir + filelabel + ".outWEdges";
+        neiNum = filedir + filelabel + ".outPtr";
+        graphAttr = filedir + filelabel + ".attribute";
+        readFile(graphAttr, neiNode, neiWeight, neiNum);
+    }
+
+    ~Graph()
+    {
+    }
+
+    void readFile(const string &graphAttr, const string &neiNode, const string &neiWeight, const string &neiNum)
+    {
+        cout << "Read graph attributes..." << endl;
+        string tmp;
+        ifstream graphAttrIn(graphAttr.c_str());
+        graphAttrIn >> tmp >> n;
+        cout << "n=" << n << endl;
+        graphAttrIn.close();
+        cout << "Read graph ..." << endl;
+        //每个节点的出节点下标从哪里开始
+        ifstream neiNumIn(neiNum.c_str(), ios::in | ios::binary);
+        ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
+        ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
+        uint outSize;
+        uint outSizeSum = 0, preOutSizeSum = 0;
+        neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+        for (uint i = 0; i < n; i++)
+        {
+            double outWeight = 0;
+            neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+            outSize = outSizeSum - preOutSizeSum;
+            preOutSizeSum = outSizeSum;
+            for (uint j = 0; j < outSize; j++)
+            {
+                uint id;
+                double w;
+                neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
+                neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+                neighborList[i].push_back(node(id, w));
+                outWeight += w;
+            }
+            outSizeList[i] = outSize;
+            outWeightList[i] = outWeight;
+            totdeg += outWeight;
+        }
+        neiNumIn.close();
+        neiWeightIn.close();
+        neiNodeIn.close();
+    }
+};
+Graph g;
+
 class metric
 {
 private:
@@ -64,7 +153,7 @@ double metric::calPrecision()
             }
         }
     }
-    return (hitCount / (double)k); //?
+    return (hitCount / (double)k);
 }
 
 double metric::conductance()
@@ -192,7 +281,6 @@ double metric::cal_maxAE()
     delete[] nnzarr;
     return max_err;
 }
-
 metric::metric(string filedir, string filelabel, string algoname, long querynum, uint L, double eps)
 {
     k = 50;
@@ -216,8 +304,8 @@ metric::metric(string filedir, string filelabel, string algoname, long querynum,
 
         stringstream ss_algo;
         ss_algo << "./result/" << algoname << "/" << filelabel << "/" << L << "/" << eps << "/" << u << ".txt";
-        cout<<ss_algo.str()<<endl;//hanzhi
-	ifstream algoin(ss_algo.str());
+        cout << ss_algo.str() << endl; // hanzhi
+        ifstream algoin(ss_algo.str());
         if (!algoin)
         {
             cout << "ERROR:unable to open result file " << ss_algo.str() << endl;

@@ -119,6 +119,7 @@ int main(int argc, char **argv)
         sim = new MCAM(filedir, filelabel, L);
     else if (algoname == "MCSS")
         sim = new MCSS(filedir, filelabel, L);
+    cout << "Graph init done." << endl;
     sim->update();
     cout << endl;
     cout << "querynum=" << querynum << endl;
