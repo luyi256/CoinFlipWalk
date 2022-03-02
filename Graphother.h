@@ -46,7 +46,6 @@ class Graph
 public:
 	uint n;
 	string filedir, filelabel;
-	Random R;
 	unordered_map<uint, vector<node> > neighborList;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
@@ -55,7 +54,6 @@ public:
 	Graph() {}
 	Graph(const string &_filedir, const string &_filelabel)
 	{
-		R = Random();
 		totdeg = 0;
 		filedir = _filedir;
 		filelabel = _filelabel;
@@ -88,12 +86,45 @@ public:
 		}
 	}
 
+	void getQuery(vector<uint> &query, int num)
+	{
+		vector<double> outSizes(n, 0);
+		for (uint i = 0; i < n; i++)
+		{
+			uint outSize = outSizeList[i];
+			for (uint j = 0; j < outSize; j++)
+			{
+				uint nei = neighborList[i][j].id;
+				uint neiOutSize = outSizeList[nei];
+				outSizes[i] += neiOutSize - 1;
+				// for (uint k = 0; k < neiOutSize; k++)
+				// {
+				// 	uint neisnei = getOutVert(nei, k);
+				// 	if (neisnei != i)
+				// 		outSizes[i] += getOutSize(neisnei) - 1;
+				// }
+			}
+			outSizes[i] /= double(outSize);
+			outSizes[i] += outSize * 0.1 + outSizes[i] * 0.9;
+		}
+		vector<pair<double, uint> > pairs;
+		for (uint i = 0; i < n; i++)
+			pairs.push_back(make_pair(outSizes[i], i));
+		sort(pairs.begin(), pairs.end(), greater<pair<double, uint> >());
+		for (int i = 0; i < num; i++)
+		{
+			cout << pairs.at(i).first << endl;
+			query.push_back(pairs.at(i).second);
+		}
+	}
+
 	~Graph()
 	{
 	}
 
 	void del(long num)
 	{
+		Random R;
 		ofstream output(filedir + "/" + filelabel + ".op", ios::out);
 		for (int i = 0; i < num; i++)
 		{
@@ -256,14 +287,12 @@ class subsetGraph
 public:
 	uint n;
 	string filedir, filelabel;
-	Random R;
 	unordered_map<uint, unordered_map<int, vector<node> > > neighborList;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
 	subsetGraph() {}
 	subsetGraph(const string &_filedir, const string &_filelabel)
 	{
-		R = Random();
 		filedir = _filedir;
 		filelabel = _filelabel;
 		string neiNode, neiWeight, neiNum, graphAttr;
@@ -364,4 +393,5 @@ public:
 			outWeightList[s] = w;
 		}
 	}
+
 };

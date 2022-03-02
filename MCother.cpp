@@ -124,7 +124,7 @@ int main(int argc, char **argv)
     cout << endl;
     cout << "querynum=" << querynum << endl;
     string queryname;
-    queryname = "./query/" + filelabel + ".query";
+    queryname = "./query/" + filelabel + ".maxquery";
     ifstream query;
     cout << "Input query file from: " << queryname << endl;
     stringstream ss_run;
@@ -136,6 +136,12 @@ int main(int argc, char **argv)
         double eps = *epsIt;
         sim->setEps(eps);
         query.open(queryname);
+        if (!query)
+        {
+            sim->getQuery(querynum);
+            query.close();
+            query.open(queryname);
+        }
         for (uint i = 0; i < querynum; i++)
         {
             uint nodeId;

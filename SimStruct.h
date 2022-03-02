@@ -46,6 +46,7 @@ public:
 	uint *cs_exist[2];
 	uint *candidate_set[2];
 	double *prob[2];
+	Random R;
 	SimStruct(string filedir, string filelabel, uint step)
 	{
 		L = step;
@@ -62,6 +63,7 @@ public:
 
 	virtual void query(uint u) {}
 	virtual void update() {}
+	virtual void getQuery(int querynum) {}
 };
 
 class powermethod : public SimStruct
@@ -180,6 +182,15 @@ public:
 		cout << g.filelabel << " avg update time: " << tottime / opnum << endl;
 		opfile.close();
 	}
+	void getQuery(int querynum)
+	{
+		vector<uint> nodes;
+		g.getQuery(nodes, querynum);
+		ofstream query("./query/" + g.filelabel + ".maxquery");
+		for (int i = 0; i < querynum; i++)
+			query << nodes.at(i) << endl;
+		query.close();
+	}
 };
 
 class MCPS : public SimStruct
@@ -243,7 +254,7 @@ public:
 			if (outSize == 0)
 				break;
 			double prefixsum = 0;
-			double r = g.R.drand() * g.outWeightList[curt];
+			double r = R.drand() * g.outWeightList[curt];
 			for (uint j = 0; j < outSize; j++)
 			{
 				prefixsum += g.neighborList[curt][j].w;
@@ -273,6 +284,15 @@ public:
 		}
 		cout << g.filelabel << " avg update time: " << tottime / opnum << endl;
 		opfile.close();
+	}
+	void getQuery(int querynum)
+	{
+		vector<uint> nodes;
+		g.getQuery(nodes, querynum);
+		ofstream query("./query/" + g.filelabel + ".maxquery");
+		for (int i = 0; i < querynum; i++)
+			query << nodes.at(i) << endl;
+		query.close();
 	}
 };
 
@@ -335,7 +355,7 @@ public:
 		{
 			if (g.outSizeList[curt] == 0)
 				break;
-			double r = g.R.drand() * g.outWeightList[curt];
+			double r = R.drand() * g.outWeightList[curt];
 			int nodeno = g.BITList[curt].find(r);
 			curt = g.neighborList[curt][nodeno].id;
 		}
@@ -360,12 +380,23 @@ public:
 		cout << g.filelabel << " avg update time: " << tottime / opnum << endl;
 		opfile.close();
 	}
+
+	void getQuery(int querynum)
+	{
+		vector<uint> nodes;
+		g.getQuery(nodes, querynum);
+		ofstream query("./query/" + g.filelabel + ".maxquery");
+		for (int i = 0; i < querynum; i++)
+			query << nodes.at(i) << endl;
+		query.close();
+	}
 };
 
 class MCAM : public SimStruct
 {
 public:
 	AliasMethodGraph g;
+
 	MCAM(string filedir, string filelabel, uint step) : SimStruct(filedir, filelabel, step)
 	{
 		g = AliasMethodGraph(filedir, filelabel);
@@ -421,7 +452,7 @@ public:
 		{
 			if (g.outSizeList[u] == 0)
 				break;
-			curt = g.aliasList[curt].generateRandom(g.R);
+			curt = g.aliasList[curt].generateRandom(R);
 		}
 		return curt;
 	}
@@ -443,6 +474,16 @@ public:
 		cout << g.filelabel << " avg update time: " << tottime / opnum << endl;
 		opfile.close();
 		cout << "update result." << endl;
+	}
+
+	void getQuery(int querynum)
+	{
+		vector<uint> nodes;
+		g.getQuery(nodes, querynum);
+		ofstream query("./query/" + g.filelabel + ".maxquery");
+		for (int i = 0; i < querynum; i++)
+			query << nodes.at(i) << endl;
+		query.close();
 	}
 };
 
@@ -507,8 +548,8 @@ public:
 				break;
 			while (true)
 			{
-				double j = floor(g.R.drand() * outSize);
-				double r = g.R.drand();
+				double j = floor(R.drand() * outSize);
+				double r = R.drand();
 				if (r < g.neighborList[curt][j].w / g.outMaxWeightList[curt])
 				{
 					curt = g.neighborList[curt][j].id;
@@ -535,6 +576,16 @@ public:
 		}
 		cout << g.filelabel << " avg update time: " << tottime / opnum << endl;
 		opfile.close();
+	}
+
+	void getQuery(int querynum)
+	{
+		vector<uint> nodes;
+		g.getQuery(nodes, querynum);
+		ofstream query("./query/" + g.filelabel + ".maxquery");
+		for (int i = 0; i < querynum; i++)
+			query << nodes.at(i) << endl;
+		query.close();
 	}
 };
 
@@ -660,28 +711,16 @@ public:
 						{
 							uint subsetSize = setIt->second.size();
 							// cout<<"subsetSize="<<subsetSize<<endl;//hanzhi
-							//  int seed = chrono::system_clock::now().time_since_epoch().count();
-							//  std::default_random_engine generator(seed);
-							//  std::binomial_distribution<int> distribution(subsetSize, increMax);
-							// for (uint k = 0; k < nr; k++)
-							//{
-							int curti = 0;
-							while (curti < subsetSize)
+							int seed = chrono::system_clock::now().time_since_epoch().count();
+							std::default_random_engine generator(seed);
+							std::binomial_distribution<int> distribution(subsetSize, increMax);
+							double rbio = distribution(generator);
+							for (uint j = 0; j < rbio; j++)
 							{
-								int seed_geo = chrono::system_clock::now().time_since_epoch().count(); // hanzhi
-								std::default_random_engine generator(seed_geo);						   // hanzhi
-								// std::geometric_distribution<int> distribution(increMax);//hanzhi
-								std::geometric_distribution<int> distribution(pmax); // hanzhi
-								int rgeo = distribution(generator);					 // hanzhi
-								curti += rgeo;
-								if (curti >= subsetSize)
-								{		   // hanzhi
-									break; // hanzhi
-								}		   // hanzhi
-								uint nodeidx = curti;
-								double r = g.R.drand();
-								node tmp = setIt->second[nodeidx];
-								if (r < tmp.w / pow(2, setID))
+								double r1 = floor(R.drand() * subsetSize);
+								node tmp = setIt->second[r1];
+								double r2 = R.drand();
+								if (r2 < tmp.w / pow(2, setID))
 								{
 									prob[newLevelID][tmp.id] += tempP;
 									if (cs_exist[newLevelID][tmp.id] == 0)
@@ -690,8 +729,33 @@ public:
 										candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
 									}
 								}
-								curti += 1; // hanzhi
 							}
+
+							// int curti = 0;
+							// while (curti < subsetSize)
+							// {
+							// 	int seed_geo = chrono::system_clock::now().time_since_epoch().count(); // hanzhi
+							// 	std::default_random_engine generator(seed_geo);
+							// 	std::geometric_distribution<int> distribution(pmax); // hanzhi
+							// 	int rgeo = distribution(generator);					 // hanzhi
+							// 	curti += rgeo;
+							// 	if (curti >= subsetSize)
+							// 	{		   // hanzhi
+							// 		break; // hanzhi
+							// 	}		   // hanzhi
+							// uint nodeidx = curti;
+							// double r = R.drand();
+							// node tmp = setIt->second[nodeidx];
+							// if (r < tmp.w / pow(2, setID))
+							// {
+							// 	prob[newLevelID][tmp.id] += tempP;
+							// 	if (cs_exist[newLevelID][tmp.id] == 0)
+							// 	{
+							// 		cs_exist[newLevelID][tmp.id] = 1;
+							// 		candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
+							// 	}
+							// }
+							// curti += 1; // hanzhi
 						}
 					}
 				}
@@ -723,6 +787,12 @@ public:
 		}
 		cout << g.filelabel << " avg update time: " << tottime / opnum << endl;
 		opfile.close();
+	}
+
+	void getQuery(int querynum)
+	{
+		cout << "ERROR! CANNOT use MCSS to get query node. I haven't implemented it!" << endl;
+		exit(-1);
 	}
 };
 
