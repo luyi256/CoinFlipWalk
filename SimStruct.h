@@ -47,6 +47,8 @@ public:
 	uint *candidate_set[2];
 	double *prob[2];
 	Random R;
+	double *rannum;
+	uint ranidx;
 	SimStruct(string filedir, string filelabel, uint step)
 	{
 		L = step;
@@ -241,6 +243,7 @@ public:
 			}
 		}
 	}
+
 	uint random_walk_prefixsum(uint u, uint len)
 	{
 		if (g.outSizeList[u] == 0)
@@ -254,7 +257,7 @@ public:
 			if (outSize == 0)
 				break;
 			double prefixsum = 0;
-			double r = R.drand() * g.outWeightList[curt];
+			double r = rannum[ranidx++] * g.outWeightList[curt];
 			for (uint j = 0; j < outSize; j++)
 			{
 				prefixsum += g.neighborList[curt][j].w;
@@ -267,6 +270,7 @@ public:
 		}
 		return curt;
 	}
+
 	void update()
 	{
 		ifstream opfile(g.filedir + "/" + g.filelabel + ".op", ios::in);
@@ -285,6 +289,7 @@ public:
 		cout << g.filelabel << " avg update time: " << tottime / opnum << endl;
 		opfile.close();
 	}
+
 	void getQuery(int querynum)
 	{
 		vector<uint> nodes;
@@ -304,7 +309,7 @@ public:
 	MCPS_BIT(string filedir, string filelabel, uint step) : SimStruct(filedir, filelabel, step)
 	{
 		g = BITPrefixSumGraph(filedir, filelabel);
-		cout << g.BITList.size() << endl;
+		// cout << g.BITList.size() << endl;
 		uint vert = g.n;
 		final_p = new double[vert];
 		final_node = new uint[vert];
@@ -355,7 +360,7 @@ public:
 		{
 			if (g.outSizeList[curt] == 0)
 				break;
-			double r = R.drand() * g.outWeightList[curt];
+			double r = rannum[ranidx++] * g.outWeightList[curt];
 			int nodeno = g.BITList[curt].find(r);
 			curt = g.neighborList[curt][nodeno].id;
 		}
@@ -548,8 +553,8 @@ public:
 				break;
 			while (true)
 			{
-				double j = floor(R.drand() * outSize);
-				double r = R.drand();
+				double j = floor(rannum[ranidx++] * outSize);
+				double r = rannum[ranidx++];
 				if (r < g.neighborList[curt][j].w / g.outMaxWeightList[curt])
 				{
 					curt = g.neighborList[curt][j].id;
@@ -593,7 +598,7 @@ class MCSS : public SimStruct
 {
 public:
 	subsetGraph g;
-
+	double thetad;
 	MCSS(string filedir, string filelabel, uint step) : SimStruct(filedir, filelabel, step)
 	{
 		g = subsetGraph(filedir, filelabel);
@@ -627,6 +632,7 @@ public:
 			final_node[i] = 0;	// hanzhi
 			final_exist[i] = 0; // hanzhi
 		}
+		thetad = 1;
 	}
 	~MCSS()
 	{
@@ -694,7 +700,7 @@ public:
 						int setID = setIt->first;
 						double increMax = incre * (pow(2, setID));
 						double pmax = pow(2, setID) / outVertWt; // the maximum sampling probability in this subset;
-						if (increMax >= 1.0)
+						if (increMax >= thetad)
 						{
 							for (auto nodeIt = setIt->second.begin(); nodeIt != setIt->second.end(); nodeIt++)
 							{
@@ -713,13 +719,13 @@ public:
 							// cout<<"subsetSize="<<subsetSize<<endl;//hanzhi
 							int seed = chrono::system_clock::now().time_since_epoch().count();
 							std::default_random_engine generator(seed);
-							std::binomial_distribution<int> distribution(subsetSize, increMax);
+							std::binomial_distribution<int> distribution(subsetSize, increMax / thetad);
 							double rbio = distribution(generator);
 							for (uint j = 0; j < rbio; j++)
 							{
-								double r1 = floor(R.drand() * subsetSize);
+								double r1 = floor(rannum[ranidx++] * subsetSize);
 								node tmp = setIt->second[r1];
-								double r2 = R.drand();
+								double r2 = rannum[ranidx++];
 								if (r2 < tmp.w / pow(2, setID))
 								{
 									prob[newLevelID][tmp.id] += tempP;

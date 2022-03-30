@@ -109,9 +109,9 @@ int main(int argc, char **argv)
     SimStruct *sim = NULL;
     if (algoname == "powermethod")
         sim = new powermethod(filedir, filelabel, L);
-    else if (algoname == "MCPS") // prefix sum
-        sim = new MCPS(filedir, filelabel, L);
-    else if (algoname == "MCPS_BIT")
+    // else if (algoname == "MCPS") // prefix sum
+    //     sim = new MCPS(filedir, filelabel, L);
+    else if (algoname == "MCPS")
         sim = new MCPS_BIT(filedir, filelabel, L);
     else if (algoname == "MCAR") // accept reject
         sim = new MCAR(filedir, filelabel, L);
@@ -124,17 +124,24 @@ int main(int argc, char **argv)
     cout << endl;
     cout << "querynum=" << querynum << endl;
     string queryname;
-    queryname = "./query/" + filelabel + ".maxquery";
+    queryname = "./query/" + filelabel + ".query";
     ifstream query;
     cout << "Input query file from: " << queryname << endl;
     stringstream ss_run;
     ss_run << "./analysis/" << algoname << "_" << filelabel << "_runtime.csv";
     ofstream writecsv;
     writecsv.open(ss_run.str(), ios::app);
+    sim->rannum = new double[100000000];
+    Random tempR;
+    for (uint i = 0; i < 100000000; i++)
+    {
+        sim->rannum[i] = tempR.drand();
+    }
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
     {
         double eps = *epsIt;
         sim->setEps(eps);
+        sim->ranidx = 0;
         query.open(queryname);
         if (!query)
         {

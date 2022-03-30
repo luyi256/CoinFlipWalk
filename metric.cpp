@@ -485,7 +485,7 @@ int main(int argc, char **argv)
     g = Graph(filedir, filelabel);
     uint query_node;
     ifstream query_file;
-    query_file.open("./query/" + filelabel + ".maxquery");
+    query_file.open("./query/" + filelabel + ".query");
 
     while (query_file >> query_node)
     {
