@@ -40,3 +40,8 @@ dataset/
 *.exe
 *.out
 *.app
+
+MCPS
+MCSS
+MCAM
+MCAR

@@ -205,7 +205,6 @@ public:
 		neiWeightIn.close();
 		neiNodeIn.close();
 	}
-
 	virtual void add(uint s, uint t, double w)
 	{
 		neighborList[s].push_back(node{t, w});
@@ -247,29 +246,6 @@ public:
 	BITPrefixSumGraph() {}
 	~BITPrefixSumGraph() {}
 };
-
-// class BSTPrefixSumGraph : public Graph
-// {
-// public:
-// 	unordered_map<uint, BIT> BSTList;
-// 	void add(uint s, uint t, double w)
-// 	{
-// 		Graph::add(s, t, w);
-// 		BSTList[s].insert(w);
-// 	}
-// 	BSTPrefixSumGraph(const string &_filedir, const string &_filelabel) : Graph(_filedir, _filelabel)
-// 	{
-// 		for (uint i = 0; i < n; i++)
-// 		{
-// 			uint outSize = outSizeList[i];
-// 			BSTList[i] = bst();
-// 			for (uint j = 0; j < outSize; j++)
-// 				BSTList[i].insert(neighborList[i][j].w);
-// 		}
-// 	}
-// 	BSTPrefixSumGraph() {}
-// 	~BSTPrefixSumGraph() {}
-// };
 
 class AliasMethodGraph : public Graph
 {
