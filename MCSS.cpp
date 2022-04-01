@@ -116,7 +116,7 @@ int main(int argc, char **argv)
                         uint outSize = g.outSizeList[tempNode];
                         double outVertWt = g.outWeightList[tempNode];
                         double incre = tempP / outVertWt;
-                        double thetad = 0.75;
+                        double thetad = 0.65;
                         for (auto setIt = g.neighborList[tempNode].begin(); setIt != g.neighborList[tempNode].end(); setIt++)
                         {
                             int setID = setIt->first;
@@ -150,10 +150,10 @@ int main(int argc, char **argv)
                                     double r2 = R.drand();
                                     if (r2 < tmp.w / pow(2, setID))
                                     {
-                                        prob[newLevelID][tmp.id] += 1.0;
+                                        prob[newLevelID][tmp.id] += thetad;
                                         if (cs_exist[newLevelID][tmp.id] == 0)
                                         {
-                                            cs_exist[newLevelID][tmp.id] = thetad;
+                                            cs_exist[newLevelID][tmp.id] = 1;
                                             candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
                                         }
                                     }
