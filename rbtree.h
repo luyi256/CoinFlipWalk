@@ -426,6 +426,8 @@ private:
     uint nodenum;
     uint find(Node *p, double w)
     {
+        if (nodenum == 1)
+            return 0;
         double lchild, rchild;
         if (fabs(w - p->value) < 1e-6)
             return p->idx;

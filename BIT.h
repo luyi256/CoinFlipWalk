@@ -22,7 +22,7 @@ public:
         }
         if (p == 0)
             return 0;
-        if (k > 0)
+        if (k > 1e-6)
             return p;
         return p - 1;
     }

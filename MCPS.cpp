@@ -19,7 +19,7 @@ int main(int argc, char **argv)
     uint L = 10;
     string filedir, filelabel;
     argParser(argc, argv, filedir, filelabel, querynum, epss, L);
-    BITPrefixSumGraph g(filedir, filelabel);
+    BSTPrefixSumGraph g(filedir, filelabel);
     g.update();
     string queryname;
     queryname = "./query/" + filelabel + ".query";
@@ -70,7 +70,7 @@ int main(int argc, char **argv)
                     if (g.outSizeList[u] == 0)
                         break;
                     double r = R.drand() * g.outWeightList[u];
-                    int nodeno = g.BITList[u].find(r);
+                    int nodeno = g.BSTList[u].find(r);
                     u = g.neighborList[u][nodeno].id;
                 }
                 final_p[u] += 1.0 / w;

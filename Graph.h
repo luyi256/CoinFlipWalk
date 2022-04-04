@@ -283,11 +283,10 @@ public:
 		for (uint i = 0; i < n; i++)
 		{
 			uint outSize = outSizeList[i];
-			BSTList[i] = bst();
 			double prefixsum = 0;
-			for (uint j =0;j < outSize; j++)
+			for (uint j = 0; j < outSize; j++)
 			{
-				prefixsum+=neighborList[i][j].w;
+				prefixsum += neighborList[i][j].w;
 				BSTList[i].insert(prefixsum);
 			}
 		}
