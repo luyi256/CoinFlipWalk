@@ -73,21 +73,21 @@ int main(int argc, char **argv)
             clock_t t0 = clock();
             uint cnt1, cnt2;
             uint levelID = L % 2;
-            for (uint j = 0; j < final_count; j++) // hanzhi
+            for (uint j = 0; j < final_count; j++)
             {
                 final_p[final_node[j]] = 0;
                 final_exist[final_node[j]] = 0;
             }
             final_count = 0;
-            uint nr = 0.1 * L / eps * 4; // hanzhi
+            uint nr = 0.1 * L / eps * 4;
             cout << "samples=" << nr << endl;
-            for (uint k = 0; k < nr; k++) // hanzhi
+            for (uint k = 0; k < nr; k++)
             {
                 uint tempLevel = 0;
-                candidate_set[0][0] = u; // hanzhi
-                candidate_count[0] = 1;  // hanzhi
-                candidate_count[1] = 0;  // hanzhi
-                prob[0][u] = 1.0;        // hanzhi
+                candidate_set[0][0] = u;
+                candidate_count[0] = 1;
+                candidate_count[1] = 0;
+                prob[0][u] = 1.0;
                 while (tempLevel <= L)
                 {
                     uint tempLevelID = tempLevel % 2;
@@ -117,17 +117,21 @@ int main(int argc, char **argv)
                         double outVertWt = g.outWeightList[tempNode];
                         double incre = tempP / outVertWt;
                         double thetad = 0.65;
-                        for (auto setIt = g.neighborList[tempNode].begin(); setIt != g.neighborList[tempNode].end(); setIt++)
+                        for (auto setIt = g.neighborList[tempNode].begin(); setIt != g.neighborList[tempNode].end(); setIt++) // unordered_map没有顺序迭代的方法
                         {
                             int setID = setIt->first;
-                            double increMax = incre * (pow(2, setID));
-                            double pmax = pow(2, setID) / outVertWt; // the maximum sampling probability in this subset;
+                            double powans = pow(2, setID);
+                            double increMax = incre * powans;
+                            double pmax = powans / outVertWt; // the maximum sampling probability in this subset;
                             if (increMax >= thetad)
                             {
-                                for (auto nodeIt = setIt->second.begin(); nodeIt != setIt->second.end(); nodeIt++)
+                                uint subsetSize = setIt->second.size();
+                                // for (auto nodeIt = setIt->second.begin(); nodeIt != setIt->second.end(); nodeIt++)
+                                for (uint setidx = 0; setidx < subsetSize; setidx++)
                                 {
-                                    uint newNode = nodeIt->id;
-                                    prob[newLevelID][newNode] += incre * nodeIt->w;
+                                    node &tmpnode = setIt->second[setidx];
+                                    uint newNode = tmpnode.id;
+                                    prob[newLevelID][newNode] += incre * tmpnode.w;
                                     if (cs_exist[newLevelID][newNode] == 0)
                                     {
                                         cs_exist[newLevelID][newNode] = 1;
@@ -148,7 +152,7 @@ int main(int argc, char **argv)
                                     double r1 = floor(R.drand() * subsetSize);
                                     node tmp = setIt->second[r1];
                                     double r2 = R.drand();
-                                    if (r2 < tmp.w / pow(2, setID))
+                                    if (r2 < tmp.w / powans)
                                     {
                                         prob[newLevelID][tmp.id] += thetad;
                                         if (cs_exist[newLevelID][tmp.id] == 0)
@@ -162,15 +166,15 @@ int main(int argc, char **argv)
                                 // int curti = 0;
                                 // while (curti < subsetSize)
                                 // {
-                                // 	int seed_geo = chrono::system_clock::now().time_since_epoch().count(); // hanzhi
+                                // 	int seed_geo = chrono::system_clock::now().time_since_epoch().count();
                                 // 	std::default_random_engine generator(seed_geo);
-                                // 	std::geometric_distribution<int> distribution(pmax); // hanzhi
-                                // 	int rgeo = distribution(generator);					 // hanzhi
+                                // 	std::geometric_distribution<int> distribution(pmax);
+                                // 	int rgeo = distribution(generator);
                                 // 	curti += rgeo;
                                 // 	if (curti >= subsetSize)
-                                // 	{		   // hanzhi
-                                // 		break; // hanzhi
-                                // 	}		   // hanzhi
+                                // 	{
+                                // 		break;
+                                // 	}
                                 // uint nodeidx = curti;
                                 // double r = R.drand();
                                 // node tmp = setIt->second[nodeidx];
@@ -183,7 +187,7 @@ int main(int argc, char **argv)
                                 // 		candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
                                 // 	}
                                 // }
-                                // curti += 1; // hanzhi
+                                // curti += 1;
                             }
                         }
                     }
