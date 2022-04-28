@@ -17,6 +17,7 @@
 #include "alias.h"
 #include "BIT.h"
 #include "rbtree.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -45,7 +46,7 @@ class Graph
 public:
 	uint n;
 	string filedir, filelabel;
-	unordered_map<uint, vector<node> > neighborList;
+	unordered_map<uint, vector<node>> neighborList;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
 	unordered_map<uint, double> outMaxWeightList;
@@ -83,39 +84,43 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
+		double pkm = peak_mem() / 1024.0 / 1024.0;
+		cout << "Graph: peak memory: " << pkm << " G" << endl;
+		double pkrss = peak_rss() / 1024.0 / 1024.0;
+		cout << ", peak rss: " << pkrss << " G" << endl;
 	}
 
-	void getQuery(vector<uint> &query, int num)
-	{
-		vector<double> outSizes(n, 0);
-		for (uint i = 0; i < n; i++)
-		{
-			uint outSize = outSizeList[i];
-			for (uint j = 0; j < outSize; j++)
-			{
-				uint nei = neighborList[i][j].id;
-				uint neiOutSize = outSizeList[nei];
-				outSizes[i] += neiOutSize - 1;
-				// for (uint k = 0; k < neiOutSize; k++)
-				// {
-				// 	uint neisnei = getOutVert(nei, k);
-				// 	if (neisnei != i)
-				// 		outSizes[i] += getOutSize(neisnei) - 1;
-				// }
-			}
-			outSizes[i] /= double(outSize);
-			outSizes[i] += outSize * 0.1 + outSizes[i] * 0.9;
-		}
-		vector<pair<double, uint> > pairs;
-		for (uint i = 0; i < n; i++)
-			pairs.push_back(make_pair(outSizes[i], i));
-		sort(pairs.begin(), pairs.end(), greater<pair<double, uint> >());
-		for (int i = 0; i < num; i++)
-		{
-			cout << pairs.at(i).first << endl;
-			query.push_back(pairs.at(i).second);
-		}
-	}
+	// void getQuery(vector<uint> &query, int num)
+	// {
+	// 	vector<double> outSizes(n, 0);
+	// 	for (uint i = 0; i < n; i++)
+	// 	{
+	// 		uint outSize = outSizeList[i];
+	// 		for (uint j = 0; j < outSize; j++)
+	// 		{
+	// 			uint nei = neighborList[i][j].id;
+	// 			uint neiOutSize = outSizeList[nei];
+	// 			outSizes[i] += neiOutSize - 1;
+	// 			// for (uint k = 0; k < neiOutSize; k++)
+	// 			// {
+	// 			// 	uint neisnei = getOutVert(nei, k);
+	// 			// 	if (neisnei != i)
+	// 			// 		outSizes[i] += getOutSize(neisnei) - 1;
+	// 			// }
+	// 		}
+	// 		outSizes[i] /= double(outSize);
+	// 		outSizes[i] += outSize * 0.1 + outSizes[i] * 0.9;
+	// 	}
+	// 	vector<pair<double, uint>> pairs;
+	// 	for (uint i = 0; i < n; i++)
+	// 		pairs.push_back(make_pair(outSizes[i], i));
+	// 	sort(pairs.begin(), pairs.end(), greater<pair<double, uint>>());
+	// 	for (int i = 0; i < num; i++)
+	// 	{
+	// 		cout << pairs.at(i).first << endl;
+	// 		query.push_back(pairs.at(i).second);
+	// 	}
+	// }
 
 	void update()
 	{
@@ -322,6 +327,7 @@ public:
 			}
 			aliasList[i] = Alias(pi, outSize);
 		}
+		cout << "sizeof Alias:" << sizeof(aliasList[0]) << endl;
 	}
 	AliasMethodGraph() {}
 	~AliasMethodGraph() {}
@@ -332,7 +338,7 @@ class subsetGraph
 public:
 	uint n;
 	string filedir, filelabel;
-	unordered_map<uint, unordered_map<int, vector<node> > > neighborList;
+	unordered_map<uint, unordered_map<int, vector<node>>> neighborList;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
 	subsetGraph() {}
@@ -367,6 +373,10 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
+		double pkm = peak_mem() / 1024.0 / 1024.0;
+		cout << "Graph: peak memory: " << pkm << " G" << endl;
+		double pkrss = peak_rss() / 1024.0 / 1024.0;
+		cout << ", peak rss: " << pkrss << " G" << endl;
 	}
 
 	~subsetGraph()

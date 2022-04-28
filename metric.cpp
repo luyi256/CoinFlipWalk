@@ -37,7 +37,7 @@ public:
     uint n;
     string filedir, filelabel;
     Random R;
-    unordered_map<uint, vector<node> > neighborList;
+    unordered_map<uint, vector<node>> neighborList;
     unordered_map<uint, uint> outSizeList;
     unordered_map<uint, double> outWeightList;
     double totdeg;
@@ -107,8 +107,8 @@ class metric
 private:
     uint vert;
     double *gtvalues;
-    vector<pair<double, uint> > unnm_algoanswers;
-    vector<pair<double, int> > unnm_gtanswers;
+    vector<pair<double, uint>> unnm_algoanswers;
+    vector<pair<double, int>> unnm_gtanswers;
     uint k;
     double *algovalues;
     bool *algocheck;
@@ -119,7 +119,7 @@ public:
     double cal_l1Error();
     double calPrecision();
     double conductance();
-    metric(string filedir, string filelabel, string algoname, long querynum, uint L, double eps);
+    metric(string filedir, string filelabel, string algoname, long querynum, uint L, double eps, double thetad);
     ~metric();
 };
 
@@ -281,7 +281,7 @@ double metric::cal_maxAE()
     delete[] nnzarr;
     return max_err;
 }
-metric::metric(string filedir, string filelabel, string algoname, long querynum, uint L, double eps)
+metric::metric(string filedir, string filelabel, string algoname, long querynum, uint L, double eps, double thetad)
 {
     k = 50;
     double avg_l1_error = 0, avg_pre50 = 0, avg_conductance = 0, avg_max_additive_error = 0;
@@ -327,7 +327,7 @@ metric::metric(string filedir, string filelabel, string algoname, long querynum,
             }
         }
 
-        sort(unnm_gtanswers.begin(), unnm_gtanswers.end(), greater<pair<double, uint> >());
+        sort(unnm_gtanswers.begin(), unnm_gtanswers.end(), greater<pair<double, uint>>());
         uint precision_num = 50;
         if (gtCnt < 50)
         {
@@ -352,7 +352,7 @@ metric::metric(string filedir, string filelabel, string algoname, long querynum,
                 realCnt++;
             }
         }
-        sort(unnm_algoanswers.begin(), unnm_algoanswers.end(), greater<pair<double, uint> >());
+        sort(unnm_algoanswers.begin(), unnm_algoanswers.end(), greater<pair<double, uint>>());
         uint topknum = precision_num;
         if ((uint)unnm_algoanswers.size() < topknum)
         {
@@ -403,7 +403,7 @@ metric::metric(string filedir, string filelabel, string algoname, long querynum,
     cout << "Avg conductance = " << avg_conductance << endl;
     cout << "Avg max-additive-error = " << avg_max_additive_error << endl;
     stringstream ss_run;
-    ss_run << "./analysis/" << algoname << "_" << filelabel << "_runerror.csv";
+    ss_run << "./analysis/" << algoname << "_" << thetad << "_" << filelabel << "_runerror.csv";
     ofstream writecsv;
     writecsv.open(ss_run.str(), ios::app);
     writecsv << avg_l1_error << ',' << avg_pre50 << ',' << avg_conductance << ',' << avg_max_additive_error << endl;
@@ -422,6 +422,7 @@ int main(int argc, char **argv)
     double eps;
     uint L;
     vector<double> epss;
+    double thetad;
     while (i < argc)
     {
         if (!strcmp(argv[i], "-d"))
@@ -444,14 +445,16 @@ int main(int argc, char **argv)
             while (++i < argc && argv[i][0] != '-')
             {
                 double eps = strtod(argv[i], &endptr);
-                if ((eps == 0 || eps > 1) && endptr)
-                {
-                    cerr << "Invalid eps argument" << endl;
-                    exit(1);
-                }
                 epss.push_back(eps);
             }
             i--;
+        }
+        else if (!strcmp(argv[i], "-t"))
+        {
+            if (++i < argc)
+            {
+                thetad = strtod(argv[i], &endptr);
+            }
         }
         else if (!strcmp(argv[i], "-qn"))
         {
@@ -492,7 +495,7 @@ int main(int argc, char **argv)
         query_set.push_back(query_node);
     }
     for (vector<double>::iterator it = epss.begin(); it != epss.end(); it++)
-        metric m(filedir, filelabel, algoname, querynum, L, *it);
+        metric m(filedir, filelabel, algoname, querynum, L, *it, thetad);
     cout << "finish at ";
     time_t t = time(0); // get time now
     tm *now = localtime(&t);

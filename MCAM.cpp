@@ -9,7 +9,7 @@
 #include "Graph.h"
 using namespace std;
 typedef unsigned int uint;
-#include "utils.h"
+
 int main(int argc, char **argv)
 {
     char *endptr;
@@ -20,6 +20,10 @@ int main(int argc, char **argv)
     argParser(argc, argv, filedir, filelabel, querynum, epss, L);
     AliasMethodGraph g(filedir, filelabel);
     g.update();
+    double pkm = peak_mem() / 1024.0 / 1024.0;
+    cout << "Total graph: peak memory: " << pkm << " G" << endl;
+    double pkrss = peak_rss() / 1024.0 / 1024.0;
+    cout << ", peak rss: " << pkrss << " G" << endl;
     string queryname;
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
@@ -79,10 +83,8 @@ int main(int argc, char **argv)
             }
             clock_t t1 = clock();
             avg_time += (t1 - t0) / (double)CLOCKS_PER_SEC;
-            cout << "Query time for node " << nodeId << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s" << endl;
-
+            cout << "Query time for node " << nodeId << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s";
             stringstream ss_dir, ss;
-
             ss_dir << "./result/MCAM/" << filelabel << "/" << L << "/" << eps << "/";
             ss << ss_dir.str() << nodeId << ".txt";
             cout << "Write query results in file: " << ss.str() << endl;

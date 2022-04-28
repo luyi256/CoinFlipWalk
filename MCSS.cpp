@@ -10,7 +10,7 @@
 #include "Graph.h"
 using namespace std;
 typedef unsigned int uint;
-#include "utils.h"
+
 int main(int argc, char **argv)
 {
     char *endptr;
@@ -18,9 +18,19 @@ int main(int argc, char **argv)
     vector<double> epss;
     uint L = 10;
     string filedir, filelabel;
-    argParser(argc, argv, filedir, filelabel, querynum, epss, L);
+    double thetad;
+    argParser4MCSS(argc, argv, filedir, filelabel, querynum, epss, L, thetad);
+    cout << "====================" << endl
+         << filedir << filelabel << endl
+         << "querynum:" << querynum << endl
+         << "L:" << L << endl
+         << "thetad:" << thetad << endl;
     subsetGraph g(filedir, filelabel);
     g.update();
+    double pkm = peak_mem() / 1024.0 / 1024.0;
+    cout << "Total graph: peak memory: " << pkm << " G" << endl;
+    double pkrss = peak_rss() / 1024.0 / 1024.0;
+    cout << ", peak rss: " << pkrss << " G" << endl;
     string queryname;
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
@@ -56,7 +66,7 @@ int main(int argc, char **argv)
         final_exist[i] = 0;
     }
     stringstream ss_run;
-    ss_run << "./analysis/MCSS_" << filelabel << "_runtime.csv";
+    ss_run << "./analysis/MCSS_" << thetad << "_" << filelabel << "_runtime.csv";
     ofstream writecsv;
     writecsv.open(ss_run.str(), ios::app);
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
@@ -64,10 +74,12 @@ int main(int argc, char **argv)
         double eps = *epsIt;
         query.open(queryname);
         double avg_time = 0;
+        double randomratesum = 0, pushratesum = 0;
         for (uint i = 0; i < querynum; i++)
         {
             Random R;
             uint u;
+            double pushrate = 0, randomrate = 0, can_cnt = 0;
             query >> u;
             cout << i << ": " << u << endl;
             clock_t t0 = clock();
@@ -116,7 +128,8 @@ int main(int argc, char **argv)
                         uint outSize = g.outSizeList[tempNode];
                         double outVertWt = g.outWeightList[tempNode];
                         double incre = tempP / outVertWt;
-                        double thetad = 0.65;
+
+                        uint pushnum = 0, randomnum = 0;
                         for (auto setIt = g.neighborList[tempNode].begin(); setIt != g.neighborList[tempNode].end(); setIt++) // unordered_map没有顺序迭代的方法
                         {
                             int setID = setIt->first;
@@ -125,8 +138,8 @@ int main(int argc, char **argv)
                             double pmax = powans / outVertWt; // the maximum sampling probability in this subset;
                             if (increMax >= thetad)
                             {
+                                pushnum++;
                                 uint subsetSize = setIt->second.size();
-                                // for (auto nodeIt = setIt->second.begin(); nodeIt != setIt->second.end(); nodeIt++)
                                 for (uint setidx = 0; setidx < subsetSize; setidx++)
                                 {
                                     node &tmpnode = setIt->second[setidx];
@@ -141,6 +154,7 @@ int main(int argc, char **argv)
                             }
                             else
                             {
+                                randomnum++;
                                 uint subsetSize = setIt->second.size();
                                 // cout<<"subsetSize="<<subsetSize<<endl;//hanzhi
                                 int seed = chrono::system_clock::now().time_since_epoch().count();
@@ -190,16 +204,22 @@ int main(int argc, char **argv)
                                 // curti += 1;
                             }
                         }
+                        pushrate += pushnum / double(pushnum + randomnum);
+                        randomrate += randomnum / double(pushnum + randomnum);
+                        can_cnt += 1;
                     }
                     tempLevel++;
                 }
             }
+
             clock_t t1 = clock();
             avg_time += (t1 - t0) / (double)CLOCKS_PER_SEC;
-            cout << "Query time for node " << u << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s" << endl;
-
+            cout << "Query time for node " << u << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s";
+            cout << "pushrate=" << pushrate / can_cnt << endl
+                 << "randomrate=" << randomrate / can_cnt << endl;
+            pushratesum += pushrate / can_cnt;
+            randomratesum += randomrate / can_cnt;
             stringstream ss_dir, ss;
-
             ss_dir << "./result/MCSS/" << filelabel << "/" << L << "/" << eps << "/";
             ss << ss_dir.str() << u << ".txt";
             cout << "Write query results in file: " << ss.str() << endl;
@@ -220,6 +240,7 @@ int main(int argc, char **argv)
         query.close();
         cout << endl;
         cout << "query time: " << avg_time / (double)querynum << " s" << endl;
+        cout << pushratesum / (double)querynum << "," << randomratesum / (double)querynum << endl;
         cout << "==== "
              << "MCSS"
              << " with " << eps << " on " << filelabel << " done!====" << endl;
