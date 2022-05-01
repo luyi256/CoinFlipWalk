@@ -71,13 +71,19 @@ int main(int argc, char **argv)
                 while (i++ < L)
                 {
                     uint outSize = g.outSizeList[u];
+                    double maxw = 0;
+                    for (uint k = 0; k < outSize; k++)
+                    {
+                        if (g.neighborList[u][k].w > maxw)
+                            maxw = g.neighborList[u][k].w;
+                    }
                     if (outSize == 0)
                         break;
                     while (true)
                     {
                         double j = floor(R.drand() * outSize);
                         double r = R.drand();
-                        if (r < g.neighborList[u][j].w / g.outMaxWeightList[u])
+                        if (r < g.neighborList[u][j].w / maxw)
                         {
                             u = g.neighborList[u][j].id;
                             break;
