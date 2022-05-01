@@ -48,7 +48,6 @@ public:
 	string filedir, filelabel;
 	unordered_map<uint, vector<node>> neighborList;
 	unordered_map<uint, uint> outSizeList;
-	unordered_map<uint, double> outWeightList;
 	Graph() {}
 	Graph(const string &_filedir, const string &_filelabel)
 	{
@@ -81,10 +80,11 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
+		ofstream memout("mem_MCAR_" + filelabel + ".txt");
 		double pkm = peak_mem() / 1024.0 / 1024.0;
-		cout << "Graph: peak memory: " << pkm << " G" << endl;
+		memout << "Graph: peak memory: " << pkm << " G" << endl;
 		double pkrss = peak_rss() / 1024.0 / 1024.0;
-		cout << ", peak rss: " << pkrss << " G" << endl;
+		memout << ", peak rss: " << pkrss << " G" << endl;
 	}
 
 	// void getQuery(vector<uint> &query, int num)
@@ -151,7 +151,6 @@ public:
 		{
 			uint s = ceil(R.drand() * n);
 			uint outSize = outSizeList[s];
-			double outWeight = outWeightList[s];
 			while (outSize <= 1)
 			{
 				s = ceil(R.drand() * n);
@@ -160,7 +159,6 @@ public:
 			auto tmp = neighborList[s].end() - 1;
 			neighborList[s].pop_back();
 			outSizeList[s]--;
-			outWeightList[s] -= tmp->w;
 			output << s << " " << tmp->id << " " << tmp->w << endl;
 		}
 		output.close();
@@ -217,7 +215,6 @@ public:
 				outWeight += w;
 			}
 			outSizeList[i] = outSize;
-			outWeightList[i] = outWeight;
 		}
 		neiNumIn.close();
 		neiWeightIn.close();
@@ -230,12 +227,10 @@ public:
 		if (outSizeList.find(s) != outSizeList.end())
 		{
 			outSizeList[s]++;
-			outWeightList[s] += w;
 		}
 		else
 		{
 			outSizeList[s] = 1;
-			outWeightList[s] = w;
 		}
 	}
 };
@@ -320,10 +315,11 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
+		ofstream memout("mem_MCPS_" + filelabel + ".txt");
 		double pkm = peak_mem() / 1024.0 / 1024.0;
-		cout << "Graph: peak memory: " << pkm << " G" << endl;
+		memout << "Graph: peak memory: " << pkm << " G" << endl;
 		double pkrss = peak_rss() / 1024.0 / 1024.0;
-		cout << ", peak rss: " << pkrss << " G" << endl;
+		memout << ", peak rss: " << pkrss << " G" << endl;
 	}
 
 	void update()
@@ -447,12 +443,10 @@ public:
 		if (outSizeList.find(s) != outSizeList.end())
 		{
 			outSizeList[s]++;
-			outWeightList[s] += w;
 		}
 		else
 		{
 			outSizeList[s] = 1;
-			outWeightList[s] = w;
 		}
 		uint outSize = outSizeList[s];
 		pair<int, double> *pi = new pair<int, double>[outSize];
@@ -493,10 +487,11 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
+		ofstream memout("mem_MCAM_" + filelabel + ".txt");
 		double pkm = peak_mem() / 1024.0 / 1024.0;
-		cout << "Graph: peak memory: " << pkm << " G" << endl;
+		memout << "Graph: peak memory: " << pkm << " G" << endl;
 		double pkrss = peak_rss() / 1024.0 / 1024.0;
-		cout << ", peak rss: " << pkrss << " G" << endl;
+		memout << ", peak rss: " << pkrss << " G" << endl;
 	}
 
 	void update()
@@ -527,7 +522,6 @@ public:
 		{
 			uint s = ceil(R.drand() * n);
 			uint outSize = outSizeList[s];
-			double outWeight = outWeightList[s];
 			while (outSize <= 1)
 			{
 				s = ceil(R.drand() * n);
@@ -536,7 +530,6 @@ public:
 			auto tmp = neighborList[s].end() - 1;
 			neighborList[s].pop_back();
 			outSizeList[s]--;
-			outWeightList[s] -= tmp->w;
 			output << s << " " << tmp->id << " " << tmp->w << endl;
 		}
 		output.close();
@@ -596,7 +589,6 @@ public:
 			}
 			aliasList[i] = Alias(pi, outSize);
 			outSizeList[i] = outSize;
-			outWeightList[i] = outWeight;
 		}
 		neiNumIn.close();
 		neiWeightIn.close();
@@ -650,10 +642,11 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
+		ofstream memout("mem_MCSS_" + filelabel + ".txt");
 		double pkm = peak_mem() / 1024.0 / 1024.0;
-		cout << "Graph: peak memory: " << pkm << " G" << endl;
+		memout << "Graph: peak memory: " << pkm << " G" << endl;
 		double pkrss = peak_rss() / 1024.0 / 1024.0;
-		cout << ", peak rss: " << pkrss << " G" << endl;
+		memout << ", peak rss: " << pkrss << " G" << endl;
 	}
 
 	~subsetGraph()

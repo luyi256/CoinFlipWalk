@@ -27,10 +27,11 @@ int main(int argc, char **argv)
          << "thetad:" << thetad << endl;
     subsetGraph g(filedir, filelabel);
     g.update();
+    ofstream memout("mem_MCSS_" + filelabel + ".txt", ios::app);
     double pkm = peak_mem() / 1024.0 / 1024.0;
-    cout << "Total graph: peak memory: " << pkm << " G" << endl;
+    memout << "Total graph: peak memory: " << pkm << " G" << endl;
     double pkrss = peak_rss() / 1024.0 / 1024.0;
-    cout << ", peak rss: " << pkrss << " G" << endl;
+    memout << ", peak rss: " << pkrss << " G" << endl;
     string queryname;
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
@@ -214,6 +215,11 @@ int main(int argc, char **argv)
 
             clock_t t1 = clock();
             avg_time += (t1 - t0) / (double)CLOCKS_PER_SEC;
+            ofstream memout("mem_MCSS_" + filelabel + ".txt", ios::app);
+            double pkm = peak_mem() / 1024.0 / 1024.0;
+            memout << "Total process: peak memory: " << pkm << " G" << endl;
+            double pkrss = peak_rss() / 1024.0 / 1024.0;
+            memout << ", peak rss: " << pkrss << " G" << endl;
             cout << "Query time for node " << u << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s";
             cout << "pushrate=" << pushrate / can_cnt << endl
                  << "randomrate=" << randomrate / can_cnt << endl;
