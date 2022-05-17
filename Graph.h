@@ -18,7 +18,7 @@
 #include "BIT.h"
 #include "rbtree.h"
 #include "utils.h"
-
+#include <chrono>
 using namespace std;
 
 typedef unsigned int uint;
@@ -80,11 +80,11 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
-		ofstream memout("mem_MCAR_" + filelabel + ".txt");
-		double pkm = peak_mem() / 1024.0 / 1024.0;
-		memout << "Graph: peak memory: " << pkm << " G" << endl;
-		double pkrss = peak_rss() / 1024.0 / 1024.0;
-		memout << ", peak rss: " << pkrss << " G" << endl;
+		// ofstream memout("mem_MCAR_" + filelabel + ".txt");
+		// double pkm = peak_mem() / 1024.0 / 1024.0;
+		// memout << "Graph: peak memory: " << pkm << " G" << endl;
+		// double pkrss = peak_rss() / 1024.0 / 1024.0;
+		// memout << ", peak rss: " << pkrss << " G" << endl;
 	}
 
 	// void getQuery(vector<uint> &query, int num)
@@ -122,20 +122,20 @@ public:
 	void update()
 	{
 		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
-
-		double tottime = 0;
 		int opnum = 0;
 		uint s, t;
 		double w;
+		long long tottime = 0;
 		while (opfile >> s >> t >> w)
 		{
-			clock_t t0 = clock();
-			add(s, t, w);
-			clock_t t1 = clock();
-			tottime += (t1 - t0) / (double)CLOCKS_PER_SEC;
+			auto begin = std::chrono::high_resolution_clock::now();
+			neighborList[s].push_back(node{t, w});
+			outSizeList[s]++;
 			opnum++;
+			auto end = std::chrono::high_resolution_clock::now();
+			tottime += chrono::duration_cast<chrono::nanoseconds>(end - begin).count();
 		}
-		cout << filelabel << " avg update time: " << tottime / opnum << endl;
+		cout << filelabel << "new avg update time: " << (tottime / 1000000000.0) / opnum << endl;
 		opfile.close();
 	}
 
@@ -220,44 +220,31 @@ public:
 		neiWeightIn.close();
 		neiNodeIn.close();
 	}
-
-	virtual void add(uint s, uint t, double w)
-	{
-		neighborList[s].push_back(node{t, w});
-		if (outSizeList.find(s) != outSizeList.end())
-		{
-			outSizeList[s]++;
-		}
-		else
-		{
-			outSizeList[s] = 1;
-		}
-	}
 };
 
-class BITPrefixSumGraph : public Graph
-{
-public:
-	unordered_map<uint, BIT> BITList;
-	void add(uint s, uint t, double w)
-	{
-		Graph::add(s, t, w);
-		BITList[s].add(w);
-	}
-	BITPrefixSumGraph(const string &_filedir, const string &_filelabel) : Graph(_filedir, _filelabel)
-	{
-		for (uint i = 0; i < n; i++)
-		{
-			uint outSize = outSizeList[i];
-			double *arr = new double[outSize];
-			for (uint j = 0; j < outSize; j++)
-				arr[j] = neighborList[i][j].w;
-			BITList[i] = BIT(outSize, arr);
-		}
-	}
-	BITPrefixSumGraph() {}
-	~BITPrefixSumGraph() {}
-};
+// class BITPrefixSumGraph : public Graph
+// {
+// public:
+// 	unordered_map<uint, BIT> BITList;
+// 	void add(uint s, uint t, double w)
+// 	{
+// 		Graph::add(s, t, w);
+// 		BITList[s].add(w);
+// 	}
+// 	BITPrefixSumGraph(const string &_filedir, const string &_filelabel) : Graph(_filedir, _filelabel)
+// 	{
+// 		for (uint i = 0; i < n; i++)
+// 		{
+// 			uint outSize = outSizeList[i];
+// 			double *arr = new double[outSize];
+// 			for (uint j = 0; j < outSize; j++)
+// 				arr[j] = neighborList[i][j].w;
+// 			BITList[i] = BIT(outSize, arr);
+// 		}
+// 	}
+// 	BITPrefixSumGraph() {}
+// 	~BITPrefixSumGraph() {}
+// };
 
 class BSTPrefixSumGraph
 {
@@ -268,22 +255,6 @@ public:
 	unordered_map<uint, vector<node>> neighborList;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
-	void add(uint s, uint t, double w)
-	{
-		neighborList[s].push_back(node{t, w});
-		if (outSizeList.find(s) != outSizeList.end())
-		{
-			outSizeList[s]++;
-			outWeightList[s] += w;
-		}
-		else
-		{
-			outSizeList[s] = 1;
-			outWeightList[s] = w;
-		}
-		BSTList[s].insert(outWeightList[s]);
-	}
-
 	BSTPrefixSumGraph(const string &_filedir, const string &_filelabel)
 	{
 		filedir = _filedir;
@@ -315,29 +286,32 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
-		ofstream memout("mem_MCPS_" + filelabel + ".txt");
-		double pkm = peak_mem() / 1024.0 / 1024.0;
-		memout << "Graph: peak memory: " << pkm << " G" << endl;
-		double pkrss = peak_rss() / 1024.0 / 1024.0;
-		memout << ", peak rss: " << pkrss << " G" << endl;
+		// ofstream memout("mem_MCPS_" + filelabel + ".txt");
+		// double pkm = peak_mem() / 1024.0 / 1024.0;
+		// memout << "Graph: peak memory: " << pkm << " G" << endl;
+		// double pkrss = peak_rss() / 1024.0 / 1024.0;
+		// memout << ", peak rss: " << pkrss << " G" << endl;
 	}
 
 	void update()
 	{
 		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
-		double tottime = 0;
 		int opnum = 0;
 		uint s, t;
 		double w;
+		long long tottime = 0;
 		while (opfile >> s >> t >> w)
 		{
-			clock_t t0 = clock();
-			add(s, t, w);
-			clock_t t1 = clock();
-			tottime += (t1 - t0) / (double)CLOCKS_PER_SEC;
+			auto begin = std::chrono::high_resolution_clock::now();
+			neighborList[s].push_back(node{t, w});
+			outSizeList[s]++;
+			outWeightList[s] += w;
+			BSTList[s].insert(outWeightList[s]);
+			auto end = std::chrono::high_resolution_clock::now();
+			tottime += chrono::duration_cast<chrono::nanoseconds>(end - begin).count();
 			opnum++;
 		}
-		cout << filelabel << " avg update time: " << tottime / opnum << endl;
+		cout << filelabel << " new avg update time: " << (tottime / 1000000000.0) / opnum << endl;
 		opfile.close();
 	}
 
@@ -429,7 +403,7 @@ public:
 	~BSTPrefixSumGraph() {}
 };
 
-class AliasMethodGraph : public Graph
+class AliasMethodGraph
 {
 public:
 	unordered_map<uint, Alias> aliasList;
@@ -437,25 +411,6 @@ public:
 	string filedir, filelabel;
 	unordered_map<uint, vector<node>> neighborList;
 	unordered_map<uint, uint> outSizeList;
-	void add(uint s, uint t, double w)
-	{
-		neighborList[s].push_back(node{t, w});
-		if (outSizeList.find(s) != outSizeList.end())
-		{
-			outSizeList[s]++;
-		}
-		else
-		{
-			outSizeList[s] = 1;
-		}
-		uint outSize = outSizeList[s];
-		pair<int, double> *pi = new pair<int, double>[outSize];
-		for (uint j = 0; j < outSize; j++)
-		{
-			pi[j] = make_pair(neighborList[s][j].id, neighborList[s][j].w);
-		}
-		aliasList[s] = Alias(pi, outSize);
-	}
 	AliasMethodGraph(const string &_filedir, const string &_filelabel)
 	{
 		filedir = _filedir;
@@ -487,30 +442,39 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
-		ofstream memout("mem_MCAM_" + filelabel + ".txt");
-		double pkm = peak_mem() / 1024.0 / 1024.0;
-		memout << "Graph: peak memory: " << pkm << " G" << endl;
-		double pkrss = peak_rss() / 1024.0 / 1024.0;
-		memout << ", peak rss: " << pkrss << " G" << endl;
+		// ofstream memout("mem_MCAM_" + filelabel + ".txt");
+		// double pkm = peak_mem() / 1024.0 / 1024.0;
+		// memout << "Graph: peak memory: " << pkm << " G" << endl;
+		// double pkrss = peak_rss() / 1024.0 / 1024.0;
+		// memout << ", peak rss: " << pkrss << " G" << endl;
 	}
 
 	void update()
 	{
 		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
 
-		double tottime = 0;
 		int opnum = 0;
 		uint s, t;
 		double w;
+		long long tottime = 0;
+
 		while (opfile >> s >> t >> w)
 		{
-			clock_t t0 = clock();
-			add(s, t, w);
-			clock_t t1 = clock();
-			tottime += (t1 - t0) / (double)CLOCKS_PER_SEC;
+			auto begin = chrono::high_resolution_clock::now();
+			neighborList[s].push_back(node{t, w});
+			outSizeList[s]++;
+			uint outSize = outSizeList[s];
+			pair<int, double> *pi = new pair<int, double>[outSize];
+			for (uint j = 0; j < outSize; j++)
+			{
+				pi[j] = make_pair(neighborList[s][j].id, neighborList[s][j].w);
+			}
+			aliasList[s] = Alias(pi, outSize);
 			opnum++;
+			auto end = chrono::high_resolution_clock::now();
+			tottime += chrono::duration_cast<chrono::nanoseconds>(end - begin).count();
 		}
-		cout << filelabel << " avg update time: " << tottime / opnum << endl;
+		cout << filelabel << "new avg update time: " << (tottime / 1000000000.0) / opnum << endl;
 		opfile.close();
 	}
 
@@ -642,11 +606,11 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
-		ofstream memout("mem_MCSS_" + filelabel + ".txt");
-		double pkm = peak_mem() / 1024.0 / 1024.0;
-		memout << "Graph: peak memory: " << pkm << " G" << endl;
-		double pkrss = peak_rss() / 1024.0 / 1024.0;
-		memout << ", peak rss: " << pkrss << " G" << endl;
+		// ofstream memout("mem_MCSS_" + filelabel + ".txt");
+		// double pkm = peak_mem() / 1024.0 / 1024.0;
+		// memout << "Graph: peak memory: " << pkm << " G" << endl;
+		// double pkrss = peak_rss() / 1024.0 / 1024.0;
+		// memout << ", peak rss: " << pkrss << " G" << endl;
 	}
 
 	~subsetGraph()
@@ -703,38 +667,25 @@ public:
 		neiWeightIn.close();
 		neiNodeIn.close();
 	}
-	virtual void add(uint s, uint t, double w)
-	{
-		int subset = floor(log2(w)) + 1;
-		neighborList[s][subset].push_back(node(t, w));
-		if (outSizeList.find(s) != outSizeList.end())
-		{
-			outSizeList[s]++;
-			outWeightList[s] += w;
-		}
-		else
-		{
-			outSizeList[s] = 1;
-			outWeightList[s] = w;
-		}
-	}
 	void update()
 	{
 		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
-
-		double tottime = 0;
 		int opnum = 0;
 		uint s, t;
 		double w;
+		long long tottime = 0;
 		while (opfile >> s >> t >> w)
 		{
-			clock_t t0 = clock();
-			add(s, t, w);
-			clock_t t1 = clock();
-			tottime += (t1 - t0) / (double)CLOCKS_PER_SEC;
+			auto begin = std::chrono::high_resolution_clock::now();
+			int subset = floor(log2(w)) + 1;
+			neighborList[s][subset].push_back(node(t, w));
+			outSizeList[s]++;
+			outWeightList[s] += w;
+			auto end = std::chrono::high_resolution_clock::now();
+			tottime += chrono::duration_cast<chrono::nanoseconds>(end - begin).count();
 			opnum++;
 		}
-		cout << filelabel << " avg update time: " << tottime / opnum << endl;
+		cout << filelabel << " new avg update time: " << (tottime / 1000000000.0) / opnum << endl;
 		opfile.close();
 	}
 };
