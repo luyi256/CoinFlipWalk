@@ -44,11 +44,13 @@ class Graph
 public:
 	uint n;
 	string filedir, filelabel;
-	unordered_map<uint, vector<node> > neighborList;
+	unordered_map<uint, vector<node>> neighborList;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
 	unordered_map<uint, double> outMaxWeightList;
 	double totdeg;
+	Alias alias;
+	vector<pair<uint, uint>> outsizevert;
 	Graph() {}
 	Graph(const string &_filedir, const string &_filelabel)
 	{
@@ -56,7 +58,7 @@ public:
 		filedir = _filedir;
 		filelabel = _filelabel;
 		string neiNode, neiWeight, neiNum, graphAttr;
-		graphAttr = filedir + filelabel + ".initattribute";
+		graphAttr = filedir + filelabel + ".initattribute_distr";
 		ifstream graphAttrIn(graphAttr.c_str());
 		cout << "FilePath: " << graphAttr.c_str() << endl;
 		if (!graphAttrIn)
@@ -68,7 +70,7 @@ public:
 			neiNum = filedir + filelabel + ".outPtr";
 			graphAttr = filedir + filelabel + ".attribute";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
-			graphAttr = filedir + filelabel + ".initattribute";
+			graphAttr = filedir + filelabel + ".initattribute_distr";
 			ofstream graphAttrOut(graphAttr.c_str());
 			graphAttrOut << "n " << n;
 			graphAttrOut.close();
@@ -82,6 +84,7 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
+		exit(-1);
 	}
 
 	void getQuery(vector<uint> &query, int num)
@@ -105,10 +108,10 @@ public:
 			outSizes[i] /= double(outSize);
 			outSizes[i] += outSize * 0.1 + outSizes[i] * 0.9;
 		}
-		vector<pair<double, uint> > pairs;
+		vector<pair<double, uint>> pairs;
 		for (uint i = 0; i < n; i++)
 			pairs.push_back(make_pair(outSizes[i], i));
-		sort(pairs.begin(), pairs.end(), greater<pair<double, uint> >());
+		sort(pairs.begin(), pairs.end(), greater<pair<double, uint>>());
 		for (int i = 0; i < num; i++)
 		{
 			cout << pairs.at(i).first << endl;
@@ -124,26 +127,37 @@ public:
 	{
 		Random R;
 		ofstream output(filedir + "/" + filelabel + ".op", ios::out);
-		for (int i = 0; i < num; i++)
+		// uint idx = 0;
+		for (uint i = 0; i < num; i++)
 		{
-			uint s = ceil(R.drand() * n);
+			// uint s = floor(R.drand() * n);
+			// uint outSize = outSizeList[s];
+			// double outWeight = outWeightList[s];
+			// while (outSize <= 1)
+			// {
+			// 	s = floor(R.drand() * n);
+			// 	outSize = outSizeList[s];
+			// }
+			// uint s = outsizevert[idx++].second;
+			// if (idx > outsizevert.size())
+			// 	idx = 0;
+			uint s = alias.generateRandom(R);
 			uint outSize = outSizeList[s];
-			double outWeight = outWeightList[s];
-			while (outSize <= 1)
-			{
-				s = ceil(R.drand() * n);
-				outSize = outSizeList[s];
-			}
-			auto tmp = neighborList[s].end() - 1;
-			neighborList[s].pop_back();
-			outSizeList[s]--;
+			uint nei = floor(R.drand() * outSize);
+			auto tmp = neighborList[s].begin() + nei;
+			// for (uint k = 0; k < outSize; k++)
+			// 	cout << neighborList[s][k].id << " " << neighborList[s][k].w << endl;
 			outWeightList[s] -= tmp->w;
 			output << s << " " << tmp->id << " " << tmp->w << endl;
+			neighborList[s].erase(tmp);
+			outSizeList[s]--;
+			// for (uint k = 0; k < neighborList[s].size(); k++)
+			// 	cout << neighborList[s][k].id << " " << neighborList[s][k].w << endl;
 		}
 		output.close();
-		ofstream outedges(filedir + filelabel + ".initoutEdges", ios::out | ios::binary);
-		ofstream outwedges(filedir + filelabel + ".initoutWEdges", ios::out | ios::binary);
-		ofstream outptr(filedir + filelabel + ".initoutPtr", ios::out | ios::binary);
+		ofstream outedges(filedir + filelabel + ".initoutEdges_distr", ios::out | ios::binary);
+		ofstream outwedges(filedir + filelabel + ".initoutWEdges_distr", ios::out | ios::binary);
+		ofstream outptr(filedir + filelabel + ".initoutPtr_distr", ios::out | ios::binary);
 
 		uint preSum = 0;
 		for (uint i = 0; i < n; i++)
@@ -178,6 +192,7 @@ public:
 		uint outSize;
 		uint outSizeSum = 0, preOutSizeSum = 0;
 		neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+		pair<int, double> *aliasD = new pair<int, double>[n];
 		for (uint i = 0; i < n; i++)
 		{
 			double outWeight = 0;
@@ -185,6 +200,7 @@ public:
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
 			double maxW = 0;
+			aliasD[i] = make_pair(i, outSize);
 			for (uint j = 0; j < outSize; j++)
 			{
 				uint id;
@@ -204,6 +220,7 @@ public:
 		neiNumIn.close();
 		neiWeightIn.close();
 		neiNodeIn.close();
+		alias = Alias(aliasD, n);
 	}
 	virtual void add(uint s, uint t, double w)
 	{
@@ -284,7 +301,7 @@ class subsetGraph
 public:
 	uint n;
 	string filedir, filelabel;
-	unordered_map<uint, unordered_map<int, vector<node> > > neighborList;
+	unordered_map<uint, unordered_map<int, vector<node>>> neighborList;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
 	subsetGraph() {}

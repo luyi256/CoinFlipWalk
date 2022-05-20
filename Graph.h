@@ -22,7 +22,7 @@
 using namespace std;
 
 typedef unsigned int uint;
-
+const int add_num = 10000;
 struct node
 {
 	uint id;
@@ -54,7 +54,7 @@ public:
 		filedir = _filedir;
 		filelabel = _filelabel;
 		string neiNode, neiWeight, neiNum, graphAttr;
-		graphAttr = filedir + filelabel + ".initattribute";
+		graphAttr = filedir + filelabel + ".initattribute_distr";
 		ifstream graphAttrIn(graphAttr.c_str());
 		cout << "FilePath: " << graphAttr.c_str() << endl;
 		if (!graphAttrIn)
@@ -66,7 +66,7 @@ public:
 			neiNum = filedir + filelabel + ".outPtr";
 			graphAttr = filedir + filelabel + ".attribute";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
-			graphAttr = filedir + filelabel + ".initattribute";
+			graphAttr = filedir + filelabel + ".initattribute_distr";
 			ofstream graphAttrOut(graphAttr.c_str());
 			graphAttrOut << "n " << n;
 			graphAttrOut.close();
@@ -75,9 +75,9 @@ public:
 		else
 		{
 			graphAttrIn.close();
-			neiNode = filedir + filelabel + ".initoutEdges";
-			neiWeight = filedir + filelabel + ".initoutWEdges";
-			neiNum = filedir + filelabel + ".initoutPtr";
+			neiNode = filedir + filelabel + ".initoutEdges_distr";
+			neiWeight = filedir + filelabel + ".initoutWEdges_distr";
+			neiNum = filedir + filelabel + ".initoutPtr_distr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
 		// ofstream memout("mem_MCAR_" + filelabel + ".txt");
@@ -122,21 +122,22 @@ public:
 	void update()
 	{
 		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
+		uint sarr[add_num];
+		uint tarr[add_num];
+		double warr[add_num];
 		int opnum = 0;
-		uint s, t;
-		double w;
-		long long tottime = 0;
-		while (opfile >> s >> t >> w)
+		while (opfile >> sarr[opnum] >> tarr[opnum] >> warr[opnum])
 		{
-			auto begin = std::chrono::high_resolution_clock::now();
-			neighborList[s].push_back(node{t, w});
-			outSizeList[s]++;
 			opnum++;
-			auto end = std::chrono::high_resolution_clock::now();
-			tottime += chrono::duration_cast<chrono::nanoseconds>(end - begin).count();
 		}
-		cout << filelabel << "new avg update time: " << (tottime / 1000000000.0) / opnum << endl;
 		opfile.close();
+		auto begin = chrono::high_resolution_clock::now();
+		for (int i = 0; i < add_num; i++)
+		{
+			neighborList[sarr[i]].push_back(node{tarr[i], warr[i]});
+			outSizeList[sarr[i]]++;
+		}
+		cout << filelabel << " new avg update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 
 	~Graph()
@@ -162,9 +163,9 @@ public:
 			output << s << " " << tmp->id << " " << tmp->w << endl;
 		}
 		output.close();
-		ofstream outedges(filedir + filelabel + ".initoutEdges", ios::out | ios::binary);
-		ofstream outwedges(filedir + filelabel + ".initoutWEdges", ios::out | ios::binary);
-		ofstream outptr(filedir + filelabel + ".initoutPtr", ios::out | ios::binary);
+		ofstream outedges(filedir + filelabel + ".initoutEdges_distr", ios::out | ios::binary);
+		ofstream outwedges(filedir + filelabel + ".initoutWEdges_distr", ios::out | ios::binary);
+		ofstream outptr(filedir + filelabel + ".initoutPtr_distr", ios::out | ios::binary);
 
 		uint preSum = 0;
 		for (uint i = 0; i < n; i++)
@@ -260,7 +261,7 @@ public:
 		filedir = _filedir;
 		filelabel = _filelabel;
 		string neiNode, neiWeight, neiNum, graphAttr;
-		graphAttr = filedir + filelabel + ".initattribute";
+		graphAttr = filedir + filelabel + ".initattribute_distr";
 		ifstream graphAttrIn(graphAttr.c_str());
 		cout << "FilePath: " << graphAttr.c_str() << endl;
 		if (!graphAttrIn)
@@ -272,7 +273,7 @@ public:
 			neiNum = filedir + filelabel + ".outPtr";
 			graphAttr = filedir + filelabel + ".attribute";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
-			graphAttr = filedir + filelabel + ".initattribute";
+			graphAttr = filedir + filelabel + ".initattribute_distr";
 			ofstream graphAttrOut(graphAttr.c_str());
 			graphAttrOut << "n " << n;
 			graphAttrOut.close();
@@ -281,9 +282,9 @@ public:
 		else
 		{
 			graphAttrIn.close();
-			neiNode = filedir + filelabel + ".initoutEdges";
-			neiWeight = filedir + filelabel + ".initoutWEdges";
-			neiNum = filedir + filelabel + ".initoutPtr";
+			neiNode = filedir + filelabel + ".initoutEdges_distr";
+			neiWeight = filedir + filelabel + ".initoutWEdges_distr";
+			neiNum = filedir + filelabel + ".initoutPtr_distr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
 		// ofstream memout("mem_MCPS_" + filelabel + ".txt");
@@ -296,23 +297,24 @@ public:
 	void update()
 	{
 		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
+		uint sarr[add_num];
+		uint tarr[add_num];
+		double warr[add_num];
 		int opnum = 0;
-		uint s, t;
-		double w;
-		long long tottime = 0;
-		while (opfile >> s >> t >> w)
+		while (opfile >> sarr[opnum] >> tarr[opnum] >> warr[opnum])
 		{
-			auto begin = std::chrono::high_resolution_clock::now();
-			neighborList[s].push_back(node{t, w});
-			outSizeList[s]++;
-			outWeightList[s] += w;
-			BSTList[s].insert(outWeightList[s]);
-			auto end = std::chrono::high_resolution_clock::now();
-			tottime += chrono::duration_cast<chrono::nanoseconds>(end - begin).count();
 			opnum++;
 		}
-		cout << filelabel << " new avg update time: " << (tottime / 1000000000.0) / opnum << endl;
 		opfile.close();
+		auto begin = chrono::high_resolution_clock::now();
+		for (int i = 0; i < add_num; i++)
+		{
+			neighborList[sarr[i]].push_back(node{tarr[i], warr[i]});
+			outSizeList[sarr[i]]++;
+			outWeightList[sarr[i]] += warr[i];
+			BSTList[sarr[i]].insert(outWeightList[sarr[i]]);
+		}
+		cout << filelabel << " new avg update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 
 	void del(long num)
@@ -336,9 +338,9 @@ public:
 			output << s << " " << tmp->id << " " << tmp->w << endl;
 		}
 		output.close();
-		ofstream outedges(filedir + filelabel + ".initoutEdges", ios::out | ios::binary);
-		ofstream outwedges(filedir + filelabel + ".initoutWEdges", ios::out | ios::binary);
-		ofstream outptr(filedir + filelabel + ".initoutPtr", ios::out | ios::binary);
+		ofstream outedges(filedir + filelabel + ".initoutEdges_distr", ios::out | ios::binary);
+		ofstream outwedges(filedir + filelabel + ".initoutWEdges_distr", ios::out | ios::binary);
+		ofstream outptr(filedir + filelabel + ".initoutPtr_distr", ios::out | ios::binary);
 
 		uint preSum = 0;
 		for (uint i = 0; i < n; i++)
@@ -416,7 +418,7 @@ public:
 		filedir = _filedir;
 		filelabel = _filelabel;
 		string neiNode, neiWeight, neiNum, graphAttr;
-		graphAttr = filedir + filelabel + ".initattribute";
+		graphAttr = filedir + filelabel + ".initattribute_distr";
 		ifstream graphAttrIn(graphAttr.c_str());
 		cout << "FilePath: " << graphAttr.c_str() << endl;
 		if (!graphAttrIn)
@@ -428,7 +430,7 @@ public:
 			neiNum = filedir + filelabel + ".outPtr";
 			graphAttr = filedir + filelabel + ".attribute";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
-			graphAttr = filedir + filelabel + ".initattribute";
+			graphAttr = filedir + filelabel + ".initattribute_distr";
 			ofstream graphAttrOut(graphAttr.c_str());
 			graphAttrOut << "n " << n;
 			graphAttrOut.close();
@@ -437,9 +439,9 @@ public:
 		else
 		{
 			graphAttrIn.close();
-			neiNode = filedir + filelabel + ".initoutEdges";
-			neiWeight = filedir + filelabel + ".initoutWEdges";
-			neiNum = filedir + filelabel + ".initoutPtr";
+			neiNode = filedir + filelabel + ".initoutEdges_distr";
+			neiWeight = filedir + filelabel + ".initoutWEdges_distr";
+			neiNum = filedir + filelabel + ".initoutPtr_distr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
 		// ofstream memout("mem_MCAM_" + filelabel + ".txt");
@@ -452,30 +454,29 @@ public:
 	void update()
 	{
 		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
-
+		uint sarr[add_num];
+		uint tarr[add_num];
+		double warr[add_num];
 		int opnum = 0;
-		uint s, t;
-		double w;
-		long long tottime = 0;
-
-		while (opfile >> s >> t >> w)
+		while (opfile >> sarr[opnum] >> tarr[opnum] >> warr[opnum])
 		{
-			auto begin = chrono::high_resolution_clock::now();
-			neighborList[s].push_back(node{t, w});
-			outSizeList[s]++;
-			uint outSize = outSizeList[s];
+			opnum++;
+		}
+		opfile.close();
+		auto begin = chrono::high_resolution_clock::now();
+		for (int i = 0; i < add_num; i++)
+		{
+			neighborList[sarr[i]].push_back(node{tarr[i], warr[i]});
+			outSizeList[sarr[i]]++;
+			uint outSize = outSizeList[sarr[i]];
 			pair<int, double> *pi = new pair<int, double>[outSize];
 			for (uint j = 0; j < outSize; j++)
 			{
-				pi[j] = make_pair(neighborList[s][j].id, neighborList[s][j].w);
+				pi[j] = make_pair(neighborList[sarr[i]][j].id, neighborList[sarr[i]][j].w);
 			}
-			aliasList[s] = Alias(pi, outSize);
-			opnum++;
-			auto end = chrono::high_resolution_clock::now();
-			tottime += chrono::duration_cast<chrono::nanoseconds>(end - begin).count();
+			aliasList[sarr[i]] = Alias(pi, outSize);
 		}
-		cout << filelabel << "new avg update time: " << (tottime / 1000000000.0) / opnum << endl;
-		opfile.close();
+		cout << filelabel << " new avg update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 
 	void del(long num)
@@ -497,9 +498,9 @@ public:
 			output << s << " " << tmp->id << " " << tmp->w << endl;
 		}
 		output.close();
-		ofstream outedges(filedir + filelabel + ".initoutEdges", ios::out | ios::binary);
-		ofstream outwedges(filedir + filelabel + ".initoutWEdges", ios::out | ios::binary);
-		ofstream outptr(filedir + filelabel + ".initoutPtr", ios::out | ios::binary);
+		ofstream outedges(filedir + filelabel + ".initoutEdges_distr", ios::out | ios::binary);
+		ofstream outwedges(filedir + filelabel + ".initoutWEdges_distr", ios::out | ios::binary);
+		ofstream outptr(filedir + filelabel + ".initoutPtr_distr", ios::out | ios::binary);
 
 		uint preSum = 0;
 		for (uint i = 0; i < n; i++)
@@ -580,7 +581,7 @@ public:
 		filedir = _filedir;
 		filelabel = _filelabel;
 		string neiNode, neiWeight, neiNum, graphAttr;
-		graphAttr = filedir + filelabel + ".initattribute";
+		graphAttr = filedir + filelabel + ".initattribute_distr";
 		ifstream graphAttrIn(graphAttr.c_str());
 		cout << "FilePath: " << graphAttr.c_str() << endl;
 		if (!graphAttrIn)
@@ -592,7 +593,7 @@ public:
 			neiNum = filedir + filelabel + ".outPtr";
 			graphAttr = filedir + filelabel + ".attribute";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
-			graphAttr = filedir + filelabel + ".initattribute";
+			graphAttr = filedir + filelabel + ".initattribute_distr";
 			ofstream graphAttrOut(graphAttr.c_str());
 			graphAttrOut << "n " << n;
 			graphAttrOut.close();
@@ -601,9 +602,9 @@ public:
 		else
 		{
 			graphAttrIn.close();
-			neiNode = filedir + filelabel + ".initoutEdges";
-			neiWeight = filedir + filelabel + ".initoutWEdges";
-			neiNum = filedir + filelabel + ".initoutPtr";
+			neiNode = filedir + filelabel + ".initoutEdges_distr";
+			neiWeight = filedir + filelabel + ".initoutWEdges_distr";
+			neiNum = filedir + filelabel + ".initoutPtr_distr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
 		// ofstream memout("mem_MCSS_" + filelabel + ".txt");
@@ -670,22 +671,23 @@ public:
 	void update()
 	{
 		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
+		uint sarr[add_num];
+		uint tarr[add_num];
+		double warr[add_num];
 		int opnum = 0;
-		uint s, t;
-		double w;
-		long long tottime = 0;
-		while (opfile >> s >> t >> w)
+		while (opfile >> sarr[opnum] >> tarr[opnum] >> warr[opnum])
 		{
-			auto begin = std::chrono::high_resolution_clock::now();
-			int subset = floor(log2(w)) + 1;
-			neighborList[s][subset].push_back(node(t, w));
-			outSizeList[s]++;
-			outWeightList[s] += w;
-			auto end = std::chrono::high_resolution_clock::now();
-			tottime += chrono::duration_cast<chrono::nanoseconds>(end - begin).count();
 			opnum++;
 		}
-		cout << filelabel << " new avg update time: " << (tottime / 1000000000.0) / opnum << endl;
 		opfile.close();
+		auto begin = chrono::high_resolution_clock::now();
+		for (int i = 0; i < add_num; i++)
+		{
+			int subset = floor(log2(warr[i])) + 1;
+			neighborList[sarr[i]][subset].push_back(node(tarr[i], warr[i]));
+			outSizeList[sarr[i]]++;
+			outWeightList[sarr[i]] += warr[i];
+		}
+		cout << filelabel << " new avg update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 };
