@@ -21,11 +21,12 @@ int main(int argc, char **argv)
     argParser(argc, argv, filedir, filelabel, querynum, epss, L);
     BSTPrefixSumGraph g(filedir, filelabel);
     g.update();
-    ofstream memout("mem_MCPS_" + filelabel + ".txt", ios::app);
-    double pkm = peak_mem() / 1024.0 / 1024.0;
-    memout << "Total graph: peak memory: " << pkm << " G" << endl;
-    double pkrss = peak_rss() / 1024.0 / 1024.0;
-    memout << ", peak rss: " << pkrss << " G" << endl;
+
+    // ofstream memout("mem_MCPS_" + filelabel + ".txt", ios::app);
+    // double pkm = peak_mem() / 1024.0 / 1024.0;
+    // memout << "Total graph: peak memory: " << pkm << " G" << endl;
+    // double pkrss = peak_rss() / 1024.0 / 1024.0;
+    // memout << ", peak rss: " << pkrss << " G" << endl;
     string queryname;
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
@@ -87,11 +88,11 @@ int main(int argc, char **argv)
             }
             clock_t t1 = clock();
             avg_time += (t1 - t0) / (double)CLOCKS_PER_SEC;
-            ofstream memout("mem_MCPS_" + filelabel + ".txt", ios::app);
+            // ofstream memout("mem_MCPS_" + filelabel + ".txt", ios::app);
             double pkm = peak_mem() / 1024.0 / 1024.0;
-            memout << "Total process: peak memory: " << pkm << " G" << endl;
-            double pkrss = peak_rss() / 1024.0 / 1024.0;
-            memout << ", peak rss: " << pkrss << " G" << endl;
+            cout << "Total process: peak memory: " << pkm << " G" << endl;
+            // double pkrss = peak_rss() / 1024.0 / 1024.0;
+            // memout << ", peak rss: " << pkrss << " G" << endl;
             cout << "Query time for node " << nodeId << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s";
             stringstream ss_dir, ss;
             ss_dir << "./result/MCPS/" << filelabel << "/" << L << "/" << eps << "/";
