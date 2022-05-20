@@ -6,7 +6,7 @@
 #include <cmath>
 #include <sys/time.h>
 #include <unordered_map>
-#include <chrono>
+
 #include "Graph.h"
 using namespace std;
 typedef unsigned int uint;
@@ -20,18 +20,19 @@ int main(int argc, char **argv)
     string filedir, filelabel;
     double thetad;
     argParser4MCSS(argc, argv, filedir, filelabel, querynum, epss, L, thetad);
-    cout << "====================" << endl
-         << filedir << filelabel << endl
-         << "querynum:" << querynum << endl
-         << "L:" << L << endl
-         << "thetad:" << thetad << endl;
+    // cout << "====================" << endl
+    //      << filedir << filelabel << endl
+    //      << "querynum:" << querynum << endl
+    //      << "L:" << L << endl
+    //      << "thetad:" << thetad << endl;
     subsetGraph g(filedir, filelabel);
     g.update();
-    ofstream memout("mem_MCSS_" + filelabel + ".txt", ios::app);
-    double pkm = peak_mem() / 1024.0 / 1024.0;
-    memout << "Total graph: peak memory: " << pkm << " G" << endl;
-    double pkrss = peak_rss() / 1024.0 / 1024.0;
-    memout << ", peak rss: " << pkrss << " G" << endl;
+
+    // ofstream memout("mem_MCSS_" + filelabel + ".txt", ios::app);
+    // double pkm = peak_mem() / 1024.0 / 1024.0;
+    // memout << "Total graph: peak memory: " << pkm << " G" << endl;
+    // double pkrss = peak_rss() / 1024.0 / 1024.0;
+    // memout << ", peak rss: " << pkrss << " G" << endl;
     string queryname;
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
@@ -66,6 +67,8 @@ int main(int argc, char **argv)
         final_node[i] = 0;
         final_exist[i] = 0;
     }
+    int seed = chrono::system_clock::now().time_since_epoch().count();
+    std::default_random_engine generator(seed);
     stringstream ss_run;
     ss_run << "./analysis/MCSS_" << thetad << "_" << filelabel << "_runtime.csv";
     ofstream writecsv;
@@ -158,8 +161,6 @@ int main(int argc, char **argv)
                                 randomnum++;
                                 uint subsetSize = setIt->second.size();
                                 // cout<<"subsetSize="<<subsetSize<<endl;//hanzhi
-                                int seed = chrono::system_clock::now().time_since_epoch().count();
-                                std::default_random_engine generator(seed);
                                 std::binomial_distribution<int> distribution(subsetSize, increMax / thetad);
                                 double rbio = distribution(generator);
                                 for (uint j = 0; j < rbio; j++)
@@ -215,14 +216,14 @@ int main(int argc, char **argv)
 
             clock_t t1 = clock();
             avg_time += (t1 - t0) / (double)CLOCKS_PER_SEC;
-            ofstream memout("mem_MCSS_" + filelabel + ".txt", ios::app);
+            // ofstream memout("mem_MCSS_" + filelabel + ".txt", ios::app);
             double pkm = peak_mem() / 1024.0 / 1024.0;
-            memout << "Total process: peak memory: " << pkm << " G" << endl;
-            double pkrss = peak_rss() / 1024.0 / 1024.0;
-            memout << ", peak rss: " << pkrss << " G" << endl;
+            cout << "Total process: peak memory: " << pkm << " G" << endl;
+            // double pkrss = peak_rss() / 1024.0 / 1024.0;
+            // memout << ", peak rss: " << pkrss << " G" << endl;
             cout << "Query time for node " << u << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s";
-            cout << "pushrate=" << pushrate / can_cnt << endl
-                 << "randomrate=" << randomrate / can_cnt << endl;
+            // cout << "pushrate=" << pushrate / can_cnt << endl
+            //      << "randomrate=" << randomrate / can_cnt << endl;
             pushratesum += pushrate / can_cnt;
             randomratesum += randomrate / can_cnt;
             stringstream ss_dir, ss;
