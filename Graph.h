@@ -70,7 +70,7 @@ public:
 			ofstream graphAttrOut(graphAttr.c_str());
 			graphAttrOut << "n " << n;
 			graphAttrOut.close();
-			del(10000);
+			getAddEdge(10000);
 		}
 		else
 		{
@@ -80,44 +80,31 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr_distr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
-		// ofstream memout("mem_MCAR_" + filelabel + ".txt");
-		// double pkm = peak_mem() / 1024.0 / 1024.0;
-		// memout << "Graph: peak memory: " << pkm << " G" << endl;
-		// double pkrss = peak_rss() / 1024.0 / 1024.0;
-		// memout << ", peak rss: " << pkrss << " G" << endl;
 	}
 
-	// void getQuery(vector<uint> &query, int num)
-	// {
-	// 	vector<double> outSizes(n, 0);
-	// 	for (uint i = 0; i < n; i++)
-	// 	{
-	// 		uint outSize = outSizeList[i];
-	// 		for (uint j = 0; j < outSize; j++)
-	// 		{
-	// 			uint nei = neighborList[i][j].id;
-	// 			uint neiOutSize = outSizeList[nei];
-	// 			outSizes[i] += neiOutSize - 1;
-	// 			// for (uint k = 0; k < neiOutSize; k++)
-	// 			// {
-	// 			// 	uint neisnei = getOutVert(nei, k);
-	// 			// 	if (neisnei != i)
-	// 			// 		outSizes[i] += getOutSize(neisnei) - 1;
-	// 			// }
-	// 		}
-	// 		outSizes[i] /= double(outSize);
-	// 		outSizes[i] += outSize * 0.1 + outSizes[i] * 0.9;
-	// 	}
-	// 	vector<pair<double, uint>> pairs;
-	// 	for (uint i = 0; i < n; i++)
-	// 		pairs.push_back(make_pair(outSizes[i], i));
-	// 	sort(pairs.begin(), pairs.end(), greater<pair<double, uint>>());
-	// 	for (int i = 0; i < num; i++)
-	// 	{
-	// 		cout << pairs.at(i).first << endl;
-	// 		query.push_back(pairs.at(i).second);
-	// 	}
-	// }
+	void getQuery(const string &queryname)
+	{
+		cout << "Generate query file..." << endl;
+		pair<int, double> *aliasD = new pair<int, double>[n];
+		for (uint i = 0; i < n; i++)
+		{
+			double outweight = 0.0;
+			for (uint j = 0; j < outSizeList[i]; j++)
+			{
+				outweight += neighborList[i][j].w;
+			}
+			aliasD[i] = make_pair(i, outweight / outSizeList[i]);
+		}
+		Alias alias = Alias(aliasD, n);
+		Random R;
+		ofstream query(queryname);
+		for (int i = 0; i < 50; i++)
+		{
+			uint node = alias.generateRandom(R);
+			query << node << endl;
+		}
+		query.close();
+	}
 
 	void update()
 	{
@@ -144,7 +131,7 @@ public:
 	{
 	}
 
-	void del(long num)
+	void getAddEdge(long num)
 	{
 		Random R;
 		ofstream output(filedir + "/" + filelabel + ".op", ios::out);
@@ -277,7 +264,7 @@ public:
 			ofstream graphAttrOut(graphAttr.c_str());
 			graphAttrOut << "n " << n;
 			graphAttrOut.close();
-			del(10000);
+			getAddEdge(10000);
 		}
 		else
 		{
@@ -287,11 +274,6 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr_distr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
-		// ofstream memout("mem_MCPS_" + filelabel + ".txt");
-		// double pkm = peak_mem() / 1024.0 / 1024.0;
-		// memout << "Graph: peak memory: " << pkm << " G" << endl;
-		// double pkrss = peak_rss() / 1024.0 / 1024.0;
-		// memout << ", peak rss: " << pkrss << " G" << endl;
 	}
 
 	void update()
@@ -317,7 +299,7 @@ public:
 		cout << filelabel << " new avg update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 
-	void del(long num)
+	void getAddEdge(long num)
 	{
 		Random R;
 		ofstream output(filedir + "/" + filelabel + ".op", ios::out);
@@ -408,7 +390,7 @@ public:
 class AliasMethodGraph
 {
 public:
-	unordered_map<uint, Alias> aliasList;
+	unordered_map<uint, pair<uint *, double *>> aliasList;
 	uint n;
 	string filedir, filelabel;
 	unordered_map<uint, vector<node>> neighborList;
@@ -434,7 +416,7 @@ public:
 			ofstream graphAttrOut(graphAttr.c_str());
 			graphAttrOut << "n " << n;
 			graphAttrOut.close();
-			del(10000);
+			getAddEdge(10000);
 		}
 		else
 		{
@@ -444,11 +426,40 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr_distr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
-		// ofstream memout("mem_MCAM_" + filelabel + ".txt");
-		// double pkm = peak_mem() / 1024.0 / 1024.0;
-		// memout << "Graph: peak memory: " << pkm << " G" << endl;
-		// double pkrss = peak_rss() / 1024.0 / 1024.0;
-		// memout << ", peak rss: " << pkrss << " G" << endl;
+	}
+
+	void alias(double *p, uint *h, uint outsize, double sum, const vector<node> &neighbors)
+	{
+		double avg = outsize / sum;
+		uint *small = new uint[outsize];
+		uint *big = new uint[outsize];
+		int big_cnt = 0, small_cnt = 0;
+		for (int j = 0; j < outsize; j++)
+		{
+			p[j] = neighbors[j].w * avg;
+			if (p[j] > 1)
+				big[big_cnt++] = j;
+			else
+				small[small_cnt++] = j;
+		}
+		small_cnt--;
+		big_cnt--;
+		while (small_cnt >= 0 && big_cnt >= 0)
+		{
+			uint smallId = small[small_cnt];
+			uint bigId = big[big_cnt];
+			h[smallId] = bigId;
+			p[bigId] -= (1 - p[smallId]);
+			if (p[bigId] < 1)
+			{
+				small[small_cnt] = bigId;
+				big_cnt--;
+			}
+			else
+				small_cnt--;
+		}
+		delete[] small;
+		delete[] big;
 	}
 
 	void update()
@@ -469,17 +480,22 @@ public:
 			neighborList[sarr[i]].push_back(node{tarr[i], warr[i]});
 			outSizeList[sarr[i]]++;
 			uint outSize = outSizeList[sarr[i]];
-			pair<int, double> *pi = new pair<int, double>[outSize];
+			delete[] aliasList[sarr[i]].first;
+			delete[] aliasList[sarr[i]].second;
+			uint *h;
+			double *p;
+			double outWeight = 0.0;
 			for (uint j = 0; j < outSize; j++)
-			{
-				pi[j] = make_pair(neighborList[sarr[i]][j].id, neighborList[sarr[i]][j].w);
-			}
-			aliasList[sarr[i]] = Alias(pi, outSize);
+				outWeight += neighborList[sarr[i]][j].w;
+			p = new double[outSize];
+			h = new uint[outSize];
+			alias(p, h, outSize, outWeight, neighborList[sarr[i]]);
+			aliasList[sarr[i]] = make_pair(h, p);
 		}
 		cout << filelabel << " new avg update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 
-	void del(long num)
+	void getAddEdge(long num)
 	{
 		Random R;
 		ofstream output(filedir + "/" + filelabel + ".op", ios::out);
@@ -541,7 +557,6 @@ public:
 			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
-			pair<int, double> *pi = new pair<int, double>[outSize];
 			for (uint j = 0; j < outSize; j++)
 			{
 				uint id;
@@ -550,9 +565,13 @@ public:
 				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
 				neighborList[i].push_back(node(id, w));
 				outWeight += w;
-				pi[j] = make_pair(id, w);
 			}
-			aliasList[i] = Alias(pi, outSize);
+			uint *h;
+			double *p;
+			p = new double[outSize];
+			h = new uint[outSize];
+			alias(p, h, outSize, outWeight, neighborList[i]);
+			aliasList[i] = make_pair(h, p);
 			outSizeList[i] = outSize;
 		}
 		neiNumIn.close();
@@ -597,7 +616,7 @@ public:
 			ofstream graphAttrOut(graphAttr.c_str());
 			graphAttrOut << "n " << n;
 			graphAttrOut.close();
-			del(10000);
+			getAddEdge(10000);
 		}
 		else
 		{
@@ -607,18 +626,13 @@ public:
 			neiNum = filedir + filelabel + ".initoutPtr_distr";
 			readFile(graphAttr, neiNode, neiWeight, neiNum);
 		}
-		// ofstream memout("mem_MCSS_" + filelabel + ".txt");
-		// double pkm = peak_mem() / 1024.0 / 1024.0;
-		// memout << "Graph: peak memory: " << pkm << " G" << endl;
-		// double pkrss = peak_rss() / 1024.0 / 1024.0;
-		// memout << ", peak rss: " << pkrss << " G" << endl;
 	}
 
 	~subsetGraph()
 	{
 	}
 
-	void del(long num)
+	void getAddEdge(long num)
 	{
 		//是为了构造初始化的图，这里不实现了，先运行别的算法得到初始图文件即可。
 	}
@@ -690,4 +704,119 @@ public:
 		}
 		cout << filelabel << " new avg update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
+};
+
+class BITPrefixSumGraph
+{
+public:
+	unordered_map<uint, BIT> BITList;
+	uint n;
+	string filedir, filelabel;
+	unordered_map<uint, vector<node>> neighborList;
+	unordered_map<uint, uint> outSizeList;
+	unordered_map<uint, double> outWeightList;
+	BITPrefixSumGraph(const string &_filedir, const string &_filelabel)
+	{
+		filedir = _filedir;
+		filelabel = _filelabel;
+		string neiNode, neiWeight, neiNum, graphAttr;
+		graphAttr = filedir + filelabel + ".initattribute_distr";
+		ifstream graphAttrIn(graphAttr.c_str());
+		cout << "FilePath: " << graphAttr.c_str() << endl;
+		if (!graphAttrIn)
+		{
+			graphAttrIn.close();
+			cout << "NO init file. Start to construct..." << endl;
+			neiNode = filedir + filelabel + ".outEdges";
+			neiWeight = filedir + filelabel + ".outWEdges";
+			neiNum = filedir + filelabel + ".outPtr";
+			graphAttr = filedir + filelabel + ".attribute";
+			readFile(graphAttr, neiNode, neiWeight, neiNum);
+			graphAttr = filedir + filelabel + ".initattribute_distr";
+			ofstream graphAttrOut(graphAttr.c_str());
+			graphAttrOut << "n " << n;
+			graphAttrOut.close();
+			getAddEdge(10000);
+		}
+		else
+		{
+			graphAttrIn.close();
+			neiNode = filedir + filelabel + ".initoutEdges_distr";
+			neiWeight = filedir + filelabel + ".initoutWEdges_distr";
+			neiNum = filedir + filelabel + ".initoutPtr_distr";
+			readFile(graphAttr, neiNode, neiWeight, neiNum);
+		}
+	}
+
+	void update()
+	{
+		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
+		uint sarr[add_num];
+		uint tarr[add_num];
+		double warr[add_num];
+		int opnum = 0;
+		while (opfile >> sarr[opnum] >> tarr[opnum] >> warr[opnum])
+		{
+			opnum++;
+		}
+		opfile.close();
+		auto begin = chrono::high_resolution_clock::now();
+		for (int i = 0; i < add_num; i++)
+		{
+			neighborList[sarr[i]].push_back(node{tarr[i], warr[i]});
+			outSizeList[sarr[i]]++;
+			outWeightList[sarr[i]] += warr[i];
+			BITList[sarr[i]].add(warr[i]);
+		}
+		cout << filelabel << " new avg update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+	}
+
+	void readFile(const string &graphAttr, const string &neiNode, const string &neiWeight, const string &neiNum)
+	{
+		cout << "Read graph attributes..." << endl;
+		string tmp;
+		ifstream graphAttrIn(graphAttr.c_str());
+		graphAttrIn >> tmp >> n;
+		cout << "n=" << n << endl;
+		graphAttrIn.close();
+		cout << "Read graph ..." << endl;
+		//每个节点的出节点下标从哪里开始
+		ifstream neiNumIn(neiNum.c_str(), ios::in | ios::binary);
+		ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
+		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
+		uint outSize;
+		uint outSizeSum = 0, preOutSizeSum = 0;
+		neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+		for (uint i = 0; i < n; i++)
+		{
+			double outWeight = 0;
+			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+			outSize = outSizeSum - preOutSizeSum;
+			preOutSizeSum = outSizeSum;
+			double *arr = new double[outSize];
+
+			for (uint j = 0; j < outSize; j++)
+			{
+				uint id;
+				double w;
+				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
+				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				neighborList[i].push_back(node(id, w));
+				outWeight += w;
+				arr[j] = neighborList[i][j].w;
+			}
+			BITList[i] = BIT(outSize, arr);
+			outSizeList[i] = outSize;
+			outWeightList[i] = outWeight;
+		}
+		neiNumIn.close();
+		neiWeightIn.close();
+		neiNodeIn.close();
+	}
+	void getAddEdge(long num)
+	{
+		//是为了构造初始化的图，这里不实现了，先运行别的算法得到初始图文件即可。
+	}
+	BITPrefixSumGraph() {}
+	~BITPrefixSumGraph() {}
 };

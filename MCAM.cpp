@@ -20,12 +20,8 @@ int main(int argc, char **argv)
     argParser(argc, argv, filedir, filelabel, querynum, epss, L);
     AliasMethodGraph g(filedir, filelabel);
     g.update();
-
-    // ofstream memout("mem_MCAM_" + filelabel + ".txt", ios::app);
-    // double pkm = peak_mem() / 1024.0 / 1024.0;
-    // memout << "Total graph: peak memory: " << pkm << " G" << endl;
-    // double pkrss = peak_rss() / 1024.0 / 1024.0;
-    // memout << ", peak rss: " << pkrss << " G" << endl;
+    double pkm = peak_mem() / 1024.0 / 1024.0;
+    cout << "Total graph: peak memory: " << pkm << " G" << endl;
     string queryname;
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
@@ -72,9 +68,12 @@ int main(int argc, char **argv)
                 uint i = 0;
                 while (i++ < L)
                 {
-                    if (g.outSizeList[u] == 0)
-                        break;
-                    u = g.aliasList[u].generateRandom(R);
+                    uint outsize = g.outSizeList[u];
+                    double r = R.drand() * outsize;
+                    uint canidx = floor(r);
+                    r -= canidx;
+                    uint tmpidx = r < g.aliasList[u].second[canidx] ? canidx : g.aliasList[u].first[canidx];
+                    u = g.neighborList[u][tmpidx].id;
                 }
                 final_p[u] += 1.0 / w;
                 if (final_exist[u] == 0)
