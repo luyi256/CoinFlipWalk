@@ -12,7 +12,6 @@ typedef unsigned int uint;
 
 int main(int argc, char **argv)
 {
-    char *endptr;
     long querynum = 10;
     vector<double> epss;
     uint L = 10;
@@ -20,12 +19,8 @@ int main(int argc, char **argv)
     argParser(argc, argv, filedir, filelabel, querynum, epss, L);
     Graph g(filedir, filelabel);
     g.update();
-
-    // ofstream memout("mem_MCAR_" + filelabel + ".txt", ios::app);
-    // double pkm = peak_mem() / 1024.0 / 1024.0;
-    // memout << "Total graph: peak memory: " << pkm << " G" << endl;
-    // double pkrss = peak_rss() / 1024.0 / 1024.0;
-    // memout << ", peak rss: " << pkrss << " G" << endl;
+    double pkm = peak_mem() / 1024.0 / 1024.0;
+    cout << "Total graph: peak memory: " << pkm << " G" << endl;
     string queryname;
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
@@ -48,6 +43,12 @@ int main(int argc, char **argv)
     {
         double eps = *epsIt;
         query.open(queryname);
+        if (!query)
+        {
+            query.close();
+            g.getQuery(queryname);
+            query.open(queryname);
+        }
         double avg_time = 0;
         for (uint i = 0; i < querynum; i++)
         {
@@ -55,11 +56,6 @@ int main(int argc, char **argv)
             query >> nodeId;
             cout << i << ": " << nodeId << endl;
             clock_t t0 = clock();
-            for (uint j = 0; j < final_count; j++)
-            {
-                final_p[final_node[j]] = 0;
-                final_exist[final_node[j]] = 0;
-            }
             final_count = 0;
             unsigned long long w = 1 / eps / 0.25;
             cout << "w=" << w << endl;
@@ -122,6 +118,8 @@ int main(int argc, char **argv)
             for (uint j = 0; j < final_count; j++)
             {
                 fout << final_node[j] << " " << final_p[final_node[j]] << endl;
+                final_p[final_node[j]] = 0;
+                final_exist[final_node[j]] = 0;
             }
             fout.close();
         }
