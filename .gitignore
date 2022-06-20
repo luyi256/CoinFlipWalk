@@ -48,3 +48,8 @@ MCAM
 MCAR
 readgraph
 thetad=*/
+
+data.py
+memory.txt
+time.txt
+plot.py
