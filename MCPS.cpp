@@ -18,7 +18,8 @@ int main(int argc, char **argv)
     uint L = 10;
     string filedir, filelabel;
     argParser(argc, argv, filedir, filelabel, querynum, epss, L);
-    BSTPrefixSumGraph g(filedir, filelabel);
+    AVLPrefixSumGraph g(filedir, filelabel);
+    // BSTPrefixSumGraph g(filedir, filelabel);
     g.update();
     double pkm = peak_mem() / 1024.0 / 1024.0;
     cout << "Total graph: peak memory: " << pkm << " G" << endl;
@@ -66,13 +67,29 @@ int main(int argc, char **argv)
                 if (g.outSizeList[u] == 0)
                     return u;
                 uint i = 0;
+                double r;
+                int nodeno;
                 while (i++ < L)
                 {
-                    if (g.outSizeList[u] == 0)
-                        break;
-                    double r = R.drand() * g.outWeightList[u];
-                    int nodeno = g.BSTList[u].find(r);
+                    // if (g.outSizeList[u] == 0) //
+                    //     break;
+                    u = 11569;
+                    // r = R.drand() * g.outWeightList[u]; //
+                    r = 12760905.835495774;
+                    double tmpwei = g.outWeightList[u];
+                    uint tmpsize = g.outSizeList[u];
+                    nodeno = prefixSumIndex(g.AVLList[u], r, 0) - 1;
+                    if (nodeno == -1)
+                    {
+                        cout << "error" << endl;
+                        exit(-1);
+                    }
                     u = g.neighborList[u][nodeno].id;
+                    if (u > g.n)
+                    {
+                        cout << "error" << endl;
+                        exit(-1);
+                    }
                 }
                 final_p[u] += 1.0 / w;
                 if (final_exist[u] == 0)

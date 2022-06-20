@@ -16,6 +16,7 @@
 #include <math.h>
 #include "alias.h"
 #include "BIT.h"
+#include "AVL.h"
 #include "rbtree.h"
 #include "utils.h"
 #include <chrono>
@@ -88,6 +89,7 @@ public:
 			query << node << endl;
 		}
 		query.close();
+		delete[] aliasD;
 	}
 
 	void update()
@@ -161,6 +163,7 @@ public:
 			auto tmp = neighborList[nodeidx][neiidx];
 			output << nodeidx << " " << tmp.id << " " << tmp.w << endl;
 		}
+		delete[] aliasD;
 		output.close();
 		// ofstream outedges(filedir + filelabel + ".initoutEdges_distr", ios::out | ios::binary);
 		// ofstream outwedges(filedir + filelabel + ".initoutWEdges_distr", ios::out | ios::binary);
@@ -259,8 +262,6 @@ public:
 		filedir = _filedir;
 		filelabel = _filelabel;
 		ifstream opfile(filedir + "/" + filelabel + ".op");
-		if (!opfile)
-			getAddEdge(10000);
 		string neiNode, neiWeight, neiNum, graphAttr;
 		neiNode = filedir + filelabel + ".outEdges";
 		neiWeight = filedir + filelabel + ".outWEdges";
@@ -268,6 +269,8 @@ public:
 		graphAttr = filedir + filelabel + ".attribute";
 		cout << "FilePath: " << graphAttr.c_str() << endl;
 		readFile(graphAttr, neiNode, neiWeight, neiNum);
+		if (!opfile)
+			getAddEdge(10000);
 	}
 
 	void update()
@@ -391,6 +394,157 @@ public:
 	~BSTPrefixSumGraph() {}
 };
 
+class AVLPrefixSumGraph
+{
+public:
+	unordered_map<uint, AVLnode *> AVLList;
+	uint n;
+	string filedir, filelabel;
+	unordered_map<uint, vector<node>> neighborList;
+	unordered_map<uint, unordered_map<uint, int>> adjList;
+	unordered_map<uint, uint> outSizeList;
+	unordered_map<uint, double> outWeightList;
+	AVLPrefixSumGraph(const string &_filedir, const string &_filelabel)
+	{
+		filedir = _filedir;
+		filelabel = _filelabel;
+		ifstream opfile(filedir + "/" + filelabel + ".op");
+		string neiNode, neiWeight, neiNum, graphAttr;
+		neiNode = filedir + filelabel + ".outEdges";
+		neiWeight = filedir + filelabel + ".outWEdges";
+		neiNum = filedir + filelabel + ".outPtr";
+		graphAttr = filedir + filelabel + ".attribute";
+		cout << "FilePath: " << graphAttr.c_str() << endl;
+		readFile(graphAttr, neiNode, neiWeight, neiNum);
+		if (!opfile)
+			getAddEdge(10000);
+	}
+
+	void update()
+	{
+		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
+		uint sarr[add_num];
+		uint tarr[add_num];
+		double warr[add_num];
+		int opnum = 0;
+		while (opfile >> sarr[opnum] >> tarr[opnum] >> warr[opnum])
+		{
+			opnum++;
+		}
+		opfile.close();
+		// delete
+		auto begin = chrono::high_resolution_clock::now();
+		for (int i = 0; i < add_num; i++)
+		{
+			uint s = sarr[i];
+			uint t = tarr[i];
+			uint neiidx = adjList[s][t];
+			uint outsize = outSizeList[s];
+			if (neiidx == outsize - 1)
+			{
+				neighborList[s].pop_back();
+				AVLList[s] = deleteLast(AVLList[s]);
+			}
+			else
+			{
+				auto tmp = neighborList[s].end() - 1;
+				neighborList[s][neiidx].id = tmp->id;
+				neighborList[s][neiidx].w = tmp->w;
+				adjList[s][tmp->id] = neiidx;
+				adjList[s].erase(t);
+				AVLList[s] = deleteLast(AVLList[s]);
+				AVLList[s] = updateNode(AVLList[s], neiidx, tmp->w);
+			}
+			outSizeList[s]--;
+			outWeightList[s] -= warr[i];
+		}
+		cout << filelabel << "avg del time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		// add
+		begin = chrono::high_resolution_clock::now();
+		for (int i = 0; i < add_num; i++)
+		{
+			neighborList[sarr[i]].push_back(node{tarr[i], warr[i]});
+			outSizeList[sarr[i]]++;
+			outWeightList[sarr[i]] += warr[i];
+			AVLList[sarr[i]]=addNode(AVLList[sarr[i]], outSizeList[sarr[i]] - 1, new AVLnode(warr[i]));
+			adjList[sarr[i]][tarr[i]] = neighborList[sarr[i]].size() - 1;
+		}
+		cout << filelabel << " new avg add time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+	}
+
+	void getAddEdge(long num)
+	{
+		pair<int, double> *aliasD = new pair<int, double>[n];
+		for (uint i = 0; i < n; i++)
+		{
+			aliasD[i] = make_pair(i, outSizeList[i]);
+		}
+		Alias alias = Alias(aliasD, n);
+		Random R;
+		ofstream output(filedir + "/" + filelabel + ".op", ios::out);
+		for (int i = 0; i < num; i++)
+		{
+			uint nodeidx = alias.generateRandom(R);
+			uint outSize = outSizeList[nodeidx];
+			while (outSize <= 1)
+			{
+				nodeidx = alias.generateRandom(R);
+				outSize = outSizeList[nodeidx];
+			}
+			uint neiidx = floor(R.drand() * outSize);
+			auto tmp = neighborList[nodeidx][neiidx];
+			output << nodeidx << " " << tmp.id << " " << tmp.w << endl;
+		}
+		output.close();
+	}
+
+	void readFile(const string &graphAttr, const string &neiNode, const string &neiWeight, const string &neiNum)
+	{
+		cout << "Read graph attributes..." << endl;
+		string tmp;
+		ifstream graphAttrIn(graphAttr.c_str());
+		graphAttrIn >> tmp >> n;
+		cout << "n=" << n << endl;
+		graphAttrIn.close();
+		cout << "Read graph ..." << endl;
+		ifstream neiNumIn(neiNum.c_str(), ios::in | ios::binary);
+		ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
+		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
+		uint outSize;
+		uint outSizeSum = 0, preOutSizeSum = 0;
+		neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+		for (uint i = 0; i < n; i++)
+		{
+			double outWeight = 0;
+			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+			outSize = outSizeSum - preOutSizeSum;
+			preOutSizeSum = outSizeSum;
+			double prefixsum = 0;
+			AVLList[i] = NULL;
+			for (uint j = 0; j < outSize; j++)
+			{
+				uint id;
+				double w;
+				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
+				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				neighborList[i].push_back(node(id, w));
+				outWeight += w;
+				prefixsum += neighborList[i][j].w;
+				adjList[i][id] = j;
+				AVLList[i] = addNode(AVLList[i], j, new AVLnode(w));
+			}
+			outSizeList[i] = outSize;
+			outWeightList[i] = outWeight;
+		}
+		neiNumIn.close();
+		neiWeightIn.close();
+		neiNodeIn.close();
+	}
+
+	AVLPrefixSumGraph() {}
+	~AVLPrefixSumGraph() {}
+};
+
 class AliasMethodGraph
 {
 public:
@@ -405,8 +559,6 @@ public:
 		filedir = _filedir;
 		filelabel = _filelabel;
 		ifstream opfile(filedir + "/" + filelabel + ".op");
-		if (!opfile)
-			getAddEdge(10000);
 		string neiNode, neiWeight, neiNum, graphAttr;
 		neiNode = filedir + filelabel + ".outEdges";
 		neiWeight = filedir + filelabel + ".outWEdges";
@@ -414,6 +566,8 @@ public:
 		graphAttr = filedir + filelabel + ".attribute";
 		cout << "FilePath: " << graphAttr.c_str() << endl;
 		readFile(graphAttr, neiNode, neiWeight, neiNum);
+		if (!opfile)
+			getAddEdge(10000);
 	}
 
 	void alias(double *p, uint *h, uint outsize, double sum, const vector<node> &neighbors)
@@ -593,10 +747,6 @@ public:
 		filedir = _filedir;
 		filelabel = _filelabel;
 		ifstream opfile(filedir + "/" + filelabel + ".op");
-		if (!opfile)
-		{
-			getAddEdge(10000);
-		}
 		string neiNode, neiWeight, neiNum, graphAttr;
 		neiNode = filedir + filelabel + ".outEdges";
 		neiWeight = filedir + filelabel + ".outWEdges";
@@ -604,6 +754,8 @@ public:
 		graphAttr = filedir + filelabel + ".attribute";
 		cout << "FilePath: " << graphAttr.c_str() << endl;
 		readFile(graphAttr, neiNode, neiWeight, neiNum);
+		if (!opfile)
+			getAddEdge(10000);
 	}
 
 	~subsetGraph()
