@@ -68,12 +68,9 @@ int main(int argc, char **argv)
                 uint i = 0;
                 while (i++ < L)
                 {
-                    uint outsize = g.outSizeList[u];
-                    double r = R.drand() * outsize;
-                    uint canidx = floor(r);
-                    r -= canidx;
-                    uint tmpidx = r < g.aliasList[u].second[canidx] ? canidx : g.aliasList[u].first[canidx];
-                    u = g.neighborList[u][tmpidx].id;
+                    if (g.outSizeList[u] == 0)
+                        break;
+                    u = g.aliasList[u].generateRandom(R);
                 }
                 final_p[u] += 1.0 / w;
                 if (final_exist[u] == 0)

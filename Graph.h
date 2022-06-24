@@ -23,7 +23,7 @@
 using namespace std;
 
 typedef unsigned int uint;
-const int add_num = 10000;
+const int add_num = 100000;
 struct node
 {
 	uint id;
@@ -64,7 +64,7 @@ public:
 		readFile(graphAttr, neiNode, neiWeight, neiNum);
 		ifstream opfile(filedir + "/" + filelabel + ".op");
 		if (!opfile)
-			getAddEdge(10000);
+			getAddEdge(add_num);
 	}
 
 	void getQuery(const string &queryname)
@@ -110,6 +110,11 @@ public:
 		{
 			uint s = sarr[i];
 			uint t = tarr[i];
+			if (adjList[s].find(t) == adjList[s].end())
+			{
+				cout << "delete a nonexistent neighbor" << endl;
+				exit(-2);
+			}
 			uint neiidx = adjList[s][t];
 			uint outsize = outSizeList[s];
 			if (neiidx == outsize - 1)
@@ -120,11 +125,12 @@ public:
 				neighborList[s][neiidx].id = tmp->id;
 				neighborList[s][neiidx].w = tmp->w;
 				adjList[s][tmp->id] = neiidx;
-				adjList[s].erase(t);
+				neighborList[s].pop_back();
 			}
+			adjList[s].erase(t);
 			outSizeList[s]--;
 		}
-		cout << filelabel << "avg del time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 		// add
 		begin = chrono::high_resolution_clock::now();
 		for (int i = 0; i < add_num; i++)
@@ -133,7 +139,7 @@ public:
 			outSizeList[sarr[i]]++;
 			adjList[sarr[i]][tarr[i]] = neighborList[sarr[i]].size() - 1;
 		}
-		cout << filelabel << " new avg add time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 
 	~Graph()
@@ -143,6 +149,7 @@ public:
 	void getAddEdge(long num)
 	{
 		pair<int, double> *aliasD = new pair<int, double>[n];
+		unordered_map<uint, vector<uint>> hasAdded;
 		for (uint i = 0; i < n; i++)
 		{
 			aliasD[i] = make_pair(i, outSizeList[i]);
@@ -150,7 +157,8 @@ public:
 		Alias alias = Alias(aliasD, n);
 		Random R;
 		ofstream output(filedir + "/" + filelabel + ".op", ios::out);
-		for (int i = 0; i < num; i++)
+		int i = num;
+		while (i)
 		{
 			uint nodeidx = alias.generateRandom(R);
 			uint outSize = outSizeList[nodeidx];
@@ -161,7 +169,21 @@ public:
 			}
 			uint neiidx = floor(R.drand() * outSize);
 			auto tmp = neighborList[nodeidx][neiidx];
+			if (hasAdded[nodeidx].size() > 0)
+			{
+				int flag = 0;
+				for (auto j : hasAdded[nodeidx])
+					if (j == tmp.id)
+					{
+						flag = 1;
+						break;
+					}
+				if (flag == 1)
+					continue;
+			}
 			output << nodeidx << " " << tmp.id << " " << tmp.w << endl;
+			hasAdded[nodeidx].push_back(tmp.id);
+			i--;
 		}
 		delete[] aliasD;
 		output.close();
@@ -286,31 +308,32 @@ public:
 		}
 		opfile.close();
 		// delete
-		auto begin = chrono::high_resolution_clock::now();
-		for (int i = 0; i < add_num; i++)
-		{
-			uint s = sarr[i];
-			uint t = tarr[i];
-			uint neiidx = adjList[s][t];
-			uint outsize = outSizeList[s];
-			if (neiidx == outsize - 1)
-				neighborList[s].pop_back();
-			else
-			{
-				auto tmp = neighborList[s].end() - 1;
-				neighborList[s][neiidx].id = tmp->id;
-				neighborList[s][neiidx].w = tmp->w;
-				adjList[s][tmp->id] = neiidx;
-				adjList[s].erase(t);
-			}
-			outSizeList[s]--;
-			outWeightList[s] -= warr[i];
-			// BST无法处理删掉一个值的情况，因为存储的是前缀和，这样前面所有值都要改变，这里应该只能通过树状数组完成
-			BSTList[s].delete_value(outWeightList[s]);
-		}
-		cout << filelabel << "avg del time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		// auto begin = chrono::high_resolution_clock::now();
+		// for (int i = 0; i < add_num; i++)
+		// {
+		// 	uint s = sarr[i];
+		// 	uint t = tarr[i];
+		// 	uint neiidx = adjList[s][t];
+		// 	uint outsize = outSizeList[s];
+		// 	if (neiidx == outsize - 1)
+		// 		neighborList[s].pop_back();
+		// 	else
+		// 	{
+		// 		auto tmp = neighborList[s].end() - 1;
+		// 		neighborList[s][neiidx].id = tmp->id;
+		// 		neighborList[s][neiidx].w = tmp->w;
+		// 		adjList[s][tmp->id] = neiidx;
+		// 		neighborList[s].pop_back();
+		// 		adjList[s].erase(t);
+		// 	}
+		// 	outSizeList[s]--;
+		// 	outWeightList[s] -= warr[i];
+		// 	// BST无法处理删掉一个值的情况，因为存储的是前缀和，这样前面所有值都要改变，这里应该只能通过树状数组完成
+		// 	BSTList[s].delete_value(outWeightList[s]);
+		// }
+		// cout << filelabel << "avg del time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 		// add
-		begin = chrono::high_resolution_clock::now();
+		auto begin = chrono::high_resolution_clock::now();
 		for (int i = 0; i < add_num; i++)
 		{
 			neighborList[sarr[i]].push_back(node{tarr[i], warr[i]});
@@ -319,33 +342,13 @@ public:
 			BSTList[sarr[i]].insert(outWeightList[sarr[i]]);
 			adjList[sarr[i]][tarr[i]] = neighborList[sarr[i]].size() - 1;
 		}
-		cout << filelabel << " new avg add time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 
 	void getAddEdge(long num)
 	{
-		pair<int, double> *aliasD = new pair<int, double>[n];
-		for (uint i = 0; i < n; i++)
-		{
-			aliasD[i] = make_pair(i, outSizeList[i]);
-		}
-		Alias alias = Alias(aliasD, n);
-		Random R;
-		ofstream output(filedir + "/" + filelabel + ".op", ios::out);
-		for (int i = 0; i < num; i++)
-		{
-			uint nodeidx = alias.generateRandom(R);
-			uint outSize = outSizeList[nodeidx];
-			while (outSize <= 1)
-			{
-				nodeidx = alias.generateRandom(R);
-				outSize = outSizeList[nodeidx];
-			}
-			uint neiidx = floor(R.drand() * outSize);
-			auto tmp = neighborList[nodeidx][neiidx];
-			output << nodeidx << " " << tmp.id << " " << tmp.w << endl;
-		}
-		output.close();
+		cout << "No update file. Try MCAR first and then run MCPS" << endl;
+		exit(-1);
 	}
 
 	void readFile(const string &graphAttr, const string &neiNode, const string &neiWeight, const string &neiNum)
@@ -438,7 +441,17 @@ public:
 		{
 			uint s = sarr[i];
 			uint t = tarr[i];
+			if (adjList[s].find(t) == adjList[s].end())
+			{
+				cout << "delete a nonexistent neighbor" << endl;
+				exit(-2);
+			}
 			uint neiidx = adjList[s][t];
+			// if (AVLList[s]->leftCount + AVLList[s]->rightCount != outSizeList[s] || (AVLList[s]->leftSum + AVLList[s]->rightSum - outWeightList[s]) > 1e-6)
+			// {
+			// 	cout << "error" << endl;
+			// 	exit(-1);
+			// }
 			uint outsize = outSizeList[s];
 			if (neiidx == outsize - 1)
 			{
@@ -451,51 +464,44 @@ public:
 				neighborList[s][neiidx].id = tmp->id;
 				neighborList[s][neiidx].w = tmp->w;
 				adjList[s][tmp->id] = neiidx;
-				adjList[s].erase(t);
+				neighborList[s].pop_back();
 				AVLList[s] = deleteLast(AVLList[s]);
 				AVLList[s] = updateNode(AVLList[s], neiidx, tmp->w);
 			}
+			adjList[s].erase(t);
 			outSizeList[s]--;
 			outWeightList[s] -= warr[i];
+			// if (AVLList[s]->leftCount + AVLList[s]->rightCount != outSizeList[s] || (AVLList[s]->leftSum + AVLList[s]->rightSum - outWeightList[s]) > 1e-6)
+			// {
+			// 	cout << "error" << endl;
+			// 	exit(-1);
+			// }
 		}
-		cout << filelabel << "avg del time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 		// add
 		begin = chrono::high_resolution_clock::now();
 		for (int i = 0; i < add_num; i++)
 		{
-			neighborList[sarr[i]].push_back(node{tarr[i], warr[i]});
-			outSizeList[sarr[i]]++;
-			outWeightList[sarr[i]] += warr[i];
-			AVLList[sarr[i]]=addNode(AVLList[sarr[i]], outSizeList[sarr[i]] - 1, new AVLnode(warr[i]));
-			adjList[sarr[i]][tarr[i]] = neighborList[sarr[i]].size() - 1;
+			uint s = sarr[i];
+			uint t = tarr[i];
+			neighborList[s].push_back(node{t, warr[i]});
+			outSizeList[s]++;
+			outWeightList[s] += warr[i];
+			AVLList[s] = addNode(AVLList[s], outSizeList[s] - 1, new AVLnode(warr[i]));
+			adjList[s][t] = neighborList[s].size() - 1;
+			if (AVLList[s]->leftCount + AVLList[s]->rightCount != outSizeList[s] || (AVLList[s]->leftSum + AVLList[s]->rightSum - outWeightList[s]) > 1e-6)
+			{
+				cout << "error" << endl;
+				exit(-1);
+			}
 		}
-		cout << filelabel << " new avg add time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 
 	void getAddEdge(long num)
 	{
-		pair<int, double> *aliasD = new pair<int, double>[n];
-		for (uint i = 0; i < n; i++)
-		{
-			aliasD[i] = make_pair(i, outSizeList[i]);
-		}
-		Alias alias = Alias(aliasD, n);
-		Random R;
-		ofstream output(filedir + "/" + filelabel + ".op", ios::out);
-		for (int i = 0; i < num; i++)
-		{
-			uint nodeidx = alias.generateRandom(R);
-			uint outSize = outSizeList[nodeidx];
-			while (outSize <= 1)
-			{
-				nodeidx = alias.generateRandom(R);
-				outSize = outSizeList[nodeidx];
-			}
-			uint neiidx = floor(R.drand() * outSize);
-			auto tmp = neighborList[nodeidx][neiidx];
-			output << nodeidx << " " << tmp.id << " " << tmp.w << endl;
-		}
-		output.close();
+		cout << "No update file. Try MCAR first and then run MCPS" << endl;
+		exit(-1);
 	}
 
 	void readFile(const string &graphAttr, const string &neiNode, const string &neiWeight, const string &neiNum)
@@ -548,7 +554,7 @@ public:
 class AliasMethodGraph
 {
 public:
-	unordered_map<uint, pair<uint *, double *>> aliasList;
+	unordered_map<uint, Alias> aliasList;
 	uint n;
 	string filedir, filelabel;
 	unordered_map<uint, vector<node>> neighborList;
@@ -570,39 +576,39 @@ public:
 			getAddEdge(10000);
 	}
 
-	void alias(double *p, uint *h, uint outsize, double sum, const vector<node> &neighbors)
-	{
-		double avg = outsize / sum;
-		uint *small = new uint[outsize];
-		uint *big = new uint[outsize];
-		int big_cnt = 0, small_cnt = 0;
-		for (int j = 0; j < outsize; j++)
-		{
-			p[j] = neighbors[j].w * avg;
-			if (p[j] > 1)
-				big[big_cnt++] = j;
-			else
-				small[small_cnt++] = j;
-		}
-		small_cnt--;
-		big_cnt--;
-		while (small_cnt >= 0 && big_cnt >= 0)
-		{
-			uint smallId = small[small_cnt];
-			uint bigId = big[big_cnt];
-			h[smallId] = bigId;
-			p[bigId] -= (1 - p[smallId]);
-			if (p[bigId] < 1)
-			{
-				small[small_cnt] = bigId;
-				big_cnt--;
-			}
-			else
-				small_cnt--;
-		}
-		delete[] small;
-		delete[] big;
-	}
+	// void alias(double *p, uint *h, uint outsize, double sum, const vector<node> &neighbors)
+	// {
+	// 	double avg = outsize / sum;
+	// 	uint *small = new uint[outsize];
+	// 	uint *big = new uint[outsize];
+	// 	int big_cnt = 0, small_cnt = 0;
+	// 	for (int j = 0; j < outsize; j++)
+	// 	{
+	// 		p[j] = neighbors[j].w * avg;
+	// 		if (p[j] > 1)
+	// 			big[big_cnt++] = j;
+	// 		else
+	// 			small[small_cnt++] = j;
+	// 	}
+	// 	small_cnt--;
+	// 	big_cnt--;
+	// 	while (small_cnt >= 0 && big_cnt >= 0)
+	// 	{
+	// 		uint smallId = small[small_cnt];
+	// 		uint bigId = big[big_cnt];
+	// 		h[smallId] = bigId;
+	// 		p[bigId] -= (1 - p[smallId]);
+	// 		if (p[bigId] < 1)
+	// 		{
+	// 			small[small_cnt] = bigId;
+	// 			big_cnt--;
+	// 		}
+	// 		else
+	// 			small_cnt--;
+	// 	}
+	// 	delete[] small;
+	// 	delete[] big;
+	// }
 
 	void update()
 	{
@@ -622,53 +628,57 @@ public:
 		{
 			uint s = sarr[i];
 			uint t = tarr[i];
+			if (adjList[s].find(t) == adjList[s].end())
+			{
+				cout << "delete a nonexistent neighbor" << endl;
+				exit(-2);
+			}
 			uint neiidx = adjList[s][t];
 			uint outsize = outSizeList[s];
 			if (neiidx == outsize - 1)
+			{
 				neighborList[s].pop_back();
+			}
 			else
 			{
 				auto tmp = neighborList[s].end() - 1;
 				neighborList[s][neiidx].id = tmp->id;
 				neighborList[s][neiidx].w = tmp->w;
 				adjList[s][tmp->id] = neiidx;
-				adjList[s].erase(t);
+				neighborList[s].pop_back();
 			}
+			adjList[s].erase(t);
 			outSizeList[s]--;
 			uint outSize = outSizeList[s];
-			delete[] aliasList[s].first;
-			delete[] aliasList[s].second;
-			uint *h;
-			double *p;
-			double outWeight = 0.0;
+			pair<int, double> *pi = new pair<int, double>[outSize];
 			for (uint j = 0; j < outSize; j++)
-				outWeight += neighborList[s][j].w;
-			p = new double[outSize];
-			h = new uint[outSize];
-			alias(p, h, outSize, outWeight, neighborList[s]);
-			aliasList[s] = make_pair(h, p);
+			{
+				pi[j] = make_pair(neighborList[s][j].id, neighborList[s][j].w);
+			}
+			aliasList[s] = Alias(pi, outSize);
+			delete[] pi;
 		}
-		cout << filelabel << " new avg update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 		// add
 		begin = chrono::high_resolution_clock::now();
 		for (int i = 0; i < add_num; i++)
 		{
-			neighborList[sarr[i]].push_back(node{tarr[i], warr[i]});
-			outSizeList[sarr[i]]++;
-			uint outSize = outSizeList[sarr[i]];
-			delete[] aliasList[sarr[i]].first;
-			delete[] aliasList[sarr[i]].second;
-			uint *h;
-			double *p;
-			double outWeight = 0.0;
+			uint s = sarr[i];
+			uint t = tarr[i];
+			neighborList[s].push_back(node{tarr[i], warr[i]});
+			outSizeList[s]++;
+			uint outSize = outSizeList[s];
+			// delete[] aliasList[s].first;
+			// delete[] aliasList[s].second;
+			pair<int, double> *pi = new pair<int, double>[outSize];
 			for (uint j = 0; j < outSize; j++)
-				outWeight += neighborList[sarr[i]][j].w;
-			p = new double[outSize];
-			h = new uint[outSize];
-			alias(p, h, outSize, outWeight, neighborList[sarr[i]]);
-			aliasList[sarr[i]] = make_pair(h, p);
+			{
+				pi[j] = make_pair(neighborList[s][j].id, neighborList[s][j].w);
+			}
+			aliasList[s] = Alias(pi, outSize);
+			delete[] pi;
 		}
-		cout << filelabel << " new avg update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 
 	void getAddEdge(long num)
@@ -699,6 +709,7 @@ public:
 			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
+			pair<int, double> *pi = new pair<int, double>[outSize];
 			for (uint j = 0; j < outSize; j++)
 			{
 				uint id;
@@ -707,14 +718,17 @@ public:
 				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
 				neighborList[i].push_back(node(id, w));
 				outWeight += w;
+				pi[j] = make_pair(id, w);
 				adjList[i][id] = j;
 			}
-			uint *h;
-			double *p;
-			p = new double[outSize];
-			h = new uint[outSize];
-			alias(p, h, outSize, outWeight, neighborList[i]);
-			aliasList[i] = make_pair(h, p);
+			aliasList[i] = Alias(pi, outSize);
+			delete[] pi;
+			// uint *h;
+			// double *p;
+			// p = new double[outSize];
+			// h = new uint[outSize];
+			// alias(p, h, outSize, outWeight, neighborList[i]);
+			// aliasList[i] = make_pair(h, p);
 			outSizeList[i] = outSize;
 		}
 		neiNumIn.close();
@@ -882,6 +896,11 @@ public:
 		{
 			uint s = sarr[i];
 			uint t = tarr[i];
+			if (adjList[s].find(t) == adjList[s].end())
+			{
+				cout << "delete a nonexistent neighbor" << endl;
+				exit(-2);
+			}
 			int subsetID = adjList[s][t].first;
 			int idx = adjList[s][t].second;
 			uint subsetSize = neighborList[s][subsetID].size();
@@ -892,13 +911,15 @@ public:
 				neighborList[s][subsetID].pop_back();
 			else
 			{
+				int tmpsize = neighborList[s][subsetID].size();
 				auto tmp = neighborList[s][subsetID].end() - 1;
 				neighborList[s][subsetID][idx].id = tmp->id;
 				outWeightList[s] -= neighborList[s][subsetID][idx].w;
 				neighborList[s][subsetID][idx].w = tmp->w;
 				adjList[s][tmp->id].second = idx;
-				adjList[s].erase(t);
+				neighborList[s][subsetID].pop_back();
 			}
+			adjList[s].erase(t);
 			outSizeList[s]--;
 			// cout << outSizeList[s] << endl;
 			// cout << outWeightList[s] << endl;
@@ -908,7 +929,7 @@ public:
 			if (gap < oldGap && oldGap > 1)
 				doGap(gap, oldGap, s);
 		}
-		cout << filelabel << "avg del time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 		// add
 		begin = chrono::high_resolution_clock::now();
 		for (int i = 0; i < add_num; i++)
@@ -927,7 +948,7 @@ public:
 			if (gap < oldGap && oldGap > 1)
 				doGap(gap, oldGap, s);
 		}
-		cout << filelabel << " new avg add time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 };
 
@@ -993,7 +1014,7 @@ public:
 			outWeightList[sarr[i]] += warr[i];
 			BITList[sarr[i]].add(warr[i]);
 		}
-		cout << filelabel << " new avg update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 
 	void readFile(const string &graphAttr, const string &neiNode, const string &neiWeight, const string &neiNum)
@@ -1040,7 +1061,8 @@ public:
 	}
 	void getAddEdge(long num)
 	{
-		//是为了构造初始化的图，这里不实现了，先运行别的算法得到初始图文件即可。
+		cout << "No update file. Try MCAR first and then run MCPS_BIT" << endl;
+		exit(-1);
 	}
 	BITPrefixSumGraph() {}
 	~BITPrefixSumGraph() {}
