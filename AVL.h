@@ -44,6 +44,7 @@ struct AVLnode
         {
             leftHeight = 0;
             leftCount = 1;
+            leftSum = value;
         }
     }
 
@@ -97,8 +98,8 @@ AVLnode *addNode(AVLnode *root, uint index, AVLnode *node)
         {
             if (root->left->factor() > 0)
                 root->setLeft(root->left->rotateLeft());
+            return root->rotateRight();
         }
-        return root->rotateRight();
     }
     else
     {
@@ -106,9 +107,7 @@ AVLnode *addNode(AVLnode *root, uint index, AVLnode *node)
         if (root->factor() > 1)
         {
             if (root->right->factor() < 0)
-            {
                 root->setRight(root->right->rotateRight());
-            }
             return root->rotateLeft();
         }
     }
@@ -158,7 +157,19 @@ AVLnode *deleteLast(AVLnode *root)
     if (root->right)
     {
         root->setRight(deleteLast(root->right));
+        if (root->factor() < -1)
+        {
+            if (root->left->factor() > 0)
+                root->setLeft(root->left->rotateLeft());
+            return root->rotateRight();
+        }
         return root;
+    }
+    else if (root->left)
+    {
+        AVLnode *tmp = root->left;
+        delete root;
+        return tmp;
     }
     else
     {
