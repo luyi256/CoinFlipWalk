@@ -472,17 +472,6 @@ public:
 			adjList[s].erase(t);
 			outSizeList[s]--;
 			outWeightList[s] -= w;
-			if (s == 173615)
-			{
-				cout << outSizeList[s] << endl;
-				cout << outWeightList[s] << endl;
-				cout << AVLList[s] << endl;
-			}
-			if (outSizeList[s] != neighborList[s].size())
-			{
-				cout << "size error" << endl;
-				exit(-1);
-			}
 			// if (AVLList[s]->leftCount + AVLList[s]->rightCount != outSizeList[s] || (AVLList[s]->leftSum + AVLList[s]->rightSum - outWeightList[s]) > 1e-6)
 			// {
 			// 	cout << "error" << endl;
@@ -500,11 +489,6 @@ public:
 			neighborList[s].push_back(node{t, w});
 			outSizeList[s]++;
 			outWeightList[s] += w;
-			if (s == 173615)
-			{
-				cout << outSizeList[s] << endl;
-				cout << outWeightList[s] << endl;
-			}
 			AVLList[s] = addNode(AVLList[s], outSizeList[s] - 1, new AVLnode(warr[i]));
 			adjList[s][t] = neighborList[s].size() - 1;
 			// if (AVLList[s]->leftCount + AVLList[s]->rightCount != outSizeList[s] || (AVLList[s]->leftSum + AVLList[s]->rightSum - outWeightList[s]) > 1e-6)
