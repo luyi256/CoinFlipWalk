@@ -1,32 +1,53 @@
+from turtle import color
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
 
-# process
-x4=[38.0162,198.845,17.8066,0.502258,3.01916,] # AM
-x1=[8.32519,83.2137,6.81605,0.196537,1.15848,] # AR
-x3=[25.7638,313.589,25.3449,0.698868,4.03053,] # PS
-x2=[15.4634,84.4233,7.85141,0.215542,1.51497,] # SS
-x5=[8.32519,83.2137,6.81605,0.196537,1.15848,] # Na
-x6=[17.866,141.226,12.547,0.338959,2.16952,] # BIT
+# strs = ["memory_overhead", "memory", "time", 'time_overhead']
+strs = ["time"]
+dataset = ['BT', 'CS', 'IC', 'TH']
+algo = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
+num_dataset = len(dataset)
+# colors = [(0, 0.4470, 0.7410), (0.8500, 0.3250, 0.0980),
+#           (0.4940, 0.1840, 0.5560), (0.6353, 0.07843, 0.1843)]
+colors = ['#263FA9', '#447B48', '#E85472', '#A686EC']
+# ylims = [50, 500, 40, 6]#8382EB
+#EC7F4B
+#263FA9
+#447B48
+for str in strs:
+    isTime = False if str.find("time") == -1 else True
+    isOverhead = False if str.find("overhead") == -1 else True
+    file = './fig/' + str + '.txt'
+    table = pd.read_csv(file, header=None)
+    array = np.array(table)
+    newarr = np.array([array[2, :], array[3, :], array[1, :], array[0, :]])
+    for k in range(num_dataset):
+        fig, ax = plt.subplots(figsize=(10, 5))
+        print(type(newarr[0, k]))
+        ax.bar(algo,
+               newarr[:, k],
+               tick_label=algo,
+               color='none',
+               log=isTime,
+               lineWidth=3)
+        ax.tick_params(axis='x', labelsize=25, rotation=15)
+        plt.yticks(fontsize=18)
+        if isTime and isOverhead:
+            ax.set_ylabel("overhead time (s)", fontsize=25)
+        elif isTime and not isOverhead:
+            ax.set_ylabel("time (s)", fontsize=25)
+        elif not isTime and isOverhead:
+            ax.set_ylabel("overhead memory (GB)", fontsize=25)
+        else:
+            ax.set_ylabel("memory (GB)", fontsize=25)
+        hatches = ["/", "x", ".", "\\"]
+        ax.set_title(dataset[k], fontsize=25)
+        for i, patch in enumerate(ax.patches):
+            patch.set_hatch(hatches[i])
+            patch.set_edgecolor(colors[i])
+        plt.rcParams['hatch.linewidth'] = 3.0
+        plt.tight_layout()
 
-base=[8.32519,83.2137,6.81605,0.196537,1.15848,]
-print([ i-j for i,j in zip(x4,base)])
-print([ i-j for i,j in zip(x1,base)])
-print([ i-j for i,j in zip(x3,base)])
-print([ i-j for i,j in zip(x2,base)])
-print([ i-j for i,j in zip(x5,base)])
-print([ i-j for i,j in zip(x6,base)])
-# 12.56682, 0.15366000000000002, 115.6845, 0.30181899999999995, 9.94013
-# 0.7167300000000001, 0.008876999999999996, 0.05380000000000962, 0.0008350000000000024, 0.11056000000000044
-# 18.15532, 0.20796600000000004, 230.42949999999996, 0.503052, 18.63933
-# 9.288720000000001, 0.12330999999999999, 1.370900000000006, 0.021232, 1.3668399999999998
-
-# 20.892,0.267376,198.898,0.498318,16.7562
-# 9.04191, 0.122593,83.2673,0.197334,6.92663
-# 26.4805,0.321682,313.643,0.699551,25.4554
-# 17.6139,0.237026,84.5844,0.217731,8.18291
-
-29.69101, 115.6313, 10.990549999999999, 0.305721, 1.86068
-0.0, 0.0, 0.0, 0.0, 0.0
-17.43861, 230.37529999999998, 18.52885, 0.5023310000000001, 2.8720499999999998
-7.138210000000001, 1.2095999999999947, 1.0353599999999998, 0.019005000000000022, 0.35649
-0.0, 0.0, 0.0, 0.0, 0.0
-9.54081, 58.012299999999996, 5.730950000000001, 0.14242200000000002, 1.01104
+        plt.savefig("./fig/{}_{}.png".format(str, dataset[k]))
+        plt.savefig("./fig/{}_{}.pdf".format(str, dataset[k]))
