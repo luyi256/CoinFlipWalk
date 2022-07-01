@@ -73,23 +73,11 @@ int main(int argc, char **argv)
                 {
                     if (g.outSizeList[u] == 0)
                         break;
-                    // u = 11569;
                     r = R.drand() * g.outWeightList[u];
-                    // r = 12760905.835495774;
                     double tmpwei = g.outWeightList[u];
                     uint tmpsize = g.outSizeList[u];
                     nodeno = prefixSumIndex(g.AVLList[u], r, 0) - 1;
-                    // if (nodeno == -1)
-                    // {
-                    //     cout << "error" << endl;
-                    //     exit(-1);
-                    // }
                     u = g.neighborList[u][nodeno].id;
-                    // if (u > g.n)
-                    // {
-                    //     cout << "error" << endl;
-                    //     exit(-1);
-                    // }
                 }
                 final_p[u] += 1.0 / w;
                 if (final_exist[u] == 0)
