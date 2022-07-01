@@ -78,7 +78,7 @@ public:
 			{
 				outweight += neighborList[i][j].w;
 			}
-			aliasD[i] = make_pair(i, outweight / outSizeList[i]);
+			aliasD[i] = make_pair(i, outweight);
 		}
 		Alias alias = Alias(aliasD, n);
 		Random R;
@@ -441,6 +441,7 @@ public:
 		{
 			uint s = sarr[i];
 			uint t = tarr[i];
+			double w = warr[i];
 			if (adjList[s].find(t) == adjList[s].end())
 			{
 				cout << "delete a nonexistent neighbor" << endl;
@@ -470,7 +471,18 @@ public:
 			}
 			adjList[s].erase(t);
 			outSizeList[s]--;
-			outWeightList[s] -= warr[i];
+			outWeightList[s] -= w;
+			if (s == 173615)
+			{
+				cout << outSizeList[s] << endl;
+				cout << outWeightList[s] << endl;
+				cout << AVLList[s] << endl;
+			}
+			if (outSizeList[s] != neighborList[s].size())
+			{
+				cout << "size error" << endl;
+				exit(-1);
+			}
 			// if (AVLList[s]->leftCount + AVLList[s]->rightCount != outSizeList[s] || (AVLList[s]->leftSum + AVLList[s]->rightSum - outWeightList[s]) > 1e-6)
 			// {
 			// 	cout << "error" << endl;
@@ -484,16 +496,22 @@ public:
 		{
 			uint s = sarr[i];
 			uint t = tarr[i];
-			neighborList[s].push_back(node{t, warr[i]});
+			double w = warr[i];
+			neighborList[s].push_back(node{t, w});
 			outSizeList[s]++;
-			outWeightList[s] += warr[i];
+			outWeightList[s] += w;
+			if (s == 173615)
+			{
+				cout << outSizeList[s] << endl;
+				cout << outWeightList[s] << endl;
+			}
 			AVLList[s] = addNode(AVLList[s], outSizeList[s] - 1, new AVLnode(warr[i]));
 			adjList[s][t] = neighborList[s].size() - 1;
-			if (AVLList[s]->leftCount + AVLList[s]->rightCount != outSizeList[s] || (AVLList[s]->leftSum + AVLList[s]->rightSum - outWeightList[s]) > 1e-6)
-			{
-				cout << "error" << endl;
-				exit(-1);
-			}
+			// if (AVLList[s]->leftCount + AVLList[s]->rightCount != outSizeList[s] || (AVLList[s]->leftSum + AVLList[s]->rightSum - outWeightList[s]) > 1e-6)
+			// {
+			// 	cout << "error" << endl;
+			// 	exit(-1);
+			// }
 		}
 		cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
@@ -525,7 +543,6 @@ public:
 			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
-			double prefixsum = 0;
 			AVLList[i] = NULL;
 			for (uint j = 0; j < outSize; j++)
 			{
@@ -535,7 +552,6 @@ public:
 				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
 				neighborList[i].push_back(node(id, w));
 				outWeight += w;
-				prefixsum += neighborList[i][j].w;
 				adjList[i][id] = j;
 				AVLList[i] = addNode(AVLList[i], j, new AVLnode(w));
 			}
@@ -753,7 +769,7 @@ public:
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
 	unordered_map<uint, unordered_map<uint, pair<int, int>>> adjList;
-	unordered_map<uint, smallSetID *> smallSetHead;
+	// unordered_map<uint, smallSetID *> smallSetHead;
 	unordered_map<uint, unordered_map<int, smallSetID *>> smallSetMap;
 	subsetGraph() {}
 	subsetGraph(const string &_filedir, const string &_filelabel)
@@ -799,10 +815,10 @@ public:
 		neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
 		for (uint i = 0; i < n; i++)
 		{
-			smallSetHead[i] = new smallSetID();
-			smallSetHead[i]->next = NULL;
-			smallSetHead[i]->pre = NULL;
-			smallSetHead[i]->id = -1;
+			// smallSetHead[i] = new smallSetID();
+			// smallSetHead[i]->next = NULL;
+			// smallSetHead[i]->pre = NULL;
+			// smallSetHead[i]->id = -1;
 			double outWeight = 0;
 			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
@@ -819,19 +835,19 @@ public:
 			}
 			outSizeList[i] = outSize;
 			outWeightList[i] = outWeight;
-			int gap = floor(log2(outWeight / (outSize * outSize))) + 1;
+			// int gap = floor(log2(outWeight / (outSize * outSize))) + 1;
 			for (uint j = 0; j < outSize; j++)
 			{
 				int subset = floor(log2(neighbor[j].w)) + 1;
-				if (subset < gap && smallSetMap[i].find(subset) == smallSetMap[i].end())
-				{
-					smallSetID *newSmallSet = new smallSetID();
-					newSmallSet->id = subset;
-					newSmallSet->pre = smallSetHead[i];
-					newSmallSet->next = smallSetHead[i]->next;
-					smallSetHead[i]->next = newSmallSet;
-					smallSetMap[i][subset] = newSmallSet;
-				}
+				// if (subset < gap && smallSetMap[i].find(subset) == smallSetMap[i].end())
+				// {
+				// 	smallSetID *newSmallSet = new smallSetID();
+				// 	newSmallSet->id = subset;
+				// 	newSmallSet->pre = smallSetHead[i];
+				// 	newSmallSet->next = smallSetHead[i]->next;
+				// 	smallSetHead[i]->next = newSmallSet;
+				// 	smallSetMap[i][subset] = newSmallSet;
+				// }
 				neighborList[i][subset].push_back(neighbor[j]);
 				adjList[i][neighbor[j].id] = make_pair(subset, neighborList[i][subset].size() - 1);
 			}
@@ -841,42 +857,42 @@ public:
 		neiNodeIn.close();
 	}
 
-	void doGap(int gap, int oldGap, uint s)
-	{
-		if (gap == oldGap)
-			return;
-		if (gap > oldGap)
-		{
-			if (oldGap < 1)
-				oldGap = 1;
-			while (oldGap < gap)
-			{
-				smallSetID *newSmallSet = new smallSetID();
-				newSmallSet->id = oldGap;
-				newSmallSet->pre = smallSetHead[s];
-				newSmallSet->next = smallSetHead[s]->next;
-				smallSetHead[s]->next = newSmallSet;
-				smallSetMap[s][oldGap] = newSmallSet;
-				oldGap++;
-			}
-		}
-		else
-		{
-			oldGap--;
-			while (oldGap >= gap && oldGap >= 1)
-			{
-				smallSetID *oldSmallSet = smallSetMap[s][oldGap];
-				if (oldSmallSet->pre != NULL)
-					oldSmallSet->pre->next = oldSmallSet->next;
-				if (oldSmallSet->next != NULL)
-					oldSmallSet->next->pre = oldSmallSet->pre;
-				delete oldSmallSet;
-				smallSetMap[s].erase(oldGap);
-				oldGap--;
-			}
-		}
-		return;
-	}
+	// void doGap(int gap, int oldGap, uint s)
+	// {
+	// 	if (gap == oldGap)
+	// 		return;
+	// 	if (gap > oldGap)
+	// 	{
+	// 		if (oldGap < 1)
+	// 			oldGap = 1;
+	// 		while (oldGap < gap)
+	// 		{
+	// 			smallSetID *newSmallSet = new smallSetID();
+	// 			newSmallSet->id = oldGap;
+	// 			newSmallSet->pre = smallSetHead[s];
+	// 			newSmallSet->next = smallSetHead[s]->next;
+	// 			smallSetHead[s]->next = newSmallSet;
+	// 			smallSetMap[s][oldGap] = newSmallSet;
+	// 			oldGap++;
+	// 		}
+	// 	}
+	// 	else
+	// 	{
+	// 		oldGap--;
+	// 		while (oldGap >= gap && oldGap >= 1)
+	// 		{
+	// 			smallSetID *oldSmallSet = smallSetMap[s][oldGap];
+	// 			if (oldSmallSet->pre != NULL)
+	// 				oldSmallSet->pre->next = oldSmallSet->next;
+	// 			if (oldSmallSet->next != NULL)
+	// 				oldSmallSet->next->pre = oldSmallSet->pre;
+	// 			delete oldSmallSet;
+	// 			smallSetMap[s].erase(oldGap);
+	// 			oldGap--;
+	// 		}
+	// 	}
+	// 	return;
+	// }
 
 	void update()
 	{
@@ -904,7 +920,7 @@ public:
 			int subsetID = adjList[s][t].first;
 			int idx = adjList[s][t].second;
 			uint subsetSize = neighborList[s][subsetID].size();
-			double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
+			// double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
 			// cout << outSizeList[s] << endl;
 			// cout << outWeightList[s] << endl;
 			if (idx == subsetSize - 1)
@@ -923,11 +939,11 @@ public:
 			outSizeList[s]--;
 			// cout << outSizeList[s] << endl;
 			// cout << outWeightList[s] << endl;
-			double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
-			if (gap > oldGap && gap > 1)
-				doGap(gap, oldGap, s);
-			if (gap < oldGap && oldGap > 1)
-				doGap(gap, oldGap, s);
+			// double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
+			// if (gap > oldGap && gap > 1)
+			// 	doGap(gap, oldGap, s);
+			// if (gap < oldGap && oldGap > 1)
+			// 	doGap(gap, oldGap, s);
 		}
 		cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 		// add
@@ -937,16 +953,16 @@ public:
 			uint s = sarr[i];
 			uint t = tarr[i];
 			int subset = floor(log2(warr[i])) + 1;
-			double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
+			// double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
 			neighborList[s][subset].push_back(node(t, warr[i]));
 			outSizeList[s]++;
 			outWeightList[s] += warr[i];
 			adjList[s][t] = make_pair(subset, neighborList[s][subset].size() - 1);
-			double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
-			if (gap > oldGap && gap > 1)
-				doGap(gap, oldGap, s);
-			if (gap < oldGap && oldGap > 1)
-				doGap(gap, oldGap, s);
+			// double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
+			// if (gap > oldGap && gap > 1)
+			// 	doGap(gap, oldGap, s);
+			// if (gap < oldGap && oldGap > 1)
+			// 	doGap(gap, oldGap, s);
 		}
 		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
