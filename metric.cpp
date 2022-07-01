@@ -251,7 +251,7 @@ double metric::cal_maxAE()
 {
     double err = 0;
     uint *nnzarr = new uint[vert]();
-    double tmp_err, max_err = 0, algoans;
+    double tmp_err, max_err = 0, algoans, gtans;
     uint max_node = -1;
     for (uint j = 0; j < unnm_algoanswers.size(); j++)
     {
@@ -261,6 +261,7 @@ double metric::cal_maxAE()
         {
             max_err = tmp_err;
             max_node = tmpnode;
+            gtans = gtvalues[tmpnode];
             algoans = unnm_algoanswers[j].first;
         }
         nnzarr[tmpnode] = 1;
@@ -274,10 +275,15 @@ double metric::cal_maxAE()
             {
                 max_err = tmp_err;
                 max_node = j;
+                gtans = tmp_err;
                 algoans = 0;
             }
         }
     }
+    cout << "max node:" << max_node << endl
+         << "max err:" << max_err << endl
+         << "algoans:" << algoans << endl
+         << "gtans:" << gtans << endl;
     delete[] nnzarr;
     return max_err;
 }
