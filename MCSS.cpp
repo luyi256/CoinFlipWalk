@@ -6,7 +6,8 @@
 #include <cmath>
 #include <sys/time.h>
 #include <unordered_map>
-
+#include <boost/math/distributions/binomial.hpp>
+#include <boost/random.hpp>
 #include "Graph.h"
 using namespace std;
 typedef unsigned int uint;
@@ -60,7 +61,7 @@ int main(int argc, char **argv)
         final_exist[i] = 0;
     }
     int seed = chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine generator(seed);
+    boost::mt19937 rng;
     stringstream ss_run;
     ss_run << "./analysis/MCSS_" << filelabel << "_runtime.csv";
     ofstream writecsv;
@@ -145,9 +146,8 @@ int main(int argc, char **argv)
                             {
                                 randomnum++;
                                 uint subsetSize = setIt->second.size();
-                                // cout<<"subsetSize="<<subsetSize<<endl;//hanzhi
-                                std::binomial_distribution<int> distribution(subsetSize, increMax / thetad);
-                                double rbio = distribution(generator);
+                                boost::binomial_distribution<> bio(subsetSize, increMax / thetad);
+                                int rbio = bio(rng);
                                 for (uint j = 0; j < rbio; j++)
                                 {
                                     double r1 = floor(R.drand() * subsetSize);
