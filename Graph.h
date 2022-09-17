@@ -65,6 +65,7 @@ public:
 		ifstream opfile(filedir + "/" + filelabel + ".op");
 		if (!opfile)
 			getAddEdge(add_num);
+		opfile.close();
 	}
 
 	void getQuery(const string &queryname)
