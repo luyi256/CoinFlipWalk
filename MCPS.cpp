@@ -13,20 +13,16 @@ typedef unsigned int uint;
 int main(int argc, char **argv)
 {
     long i = 1;
-    char *endptr;
     long querynum = 10;
     vector<double> epss;
     uint L = 10;
     string filedir, filelabel;
     argParser(argc, argv, filedir, filelabel, querynum, epss, L);
-    BSTPrefixSumGraph g(filedir, filelabel);
+    AVLPrefixSumGraph g(filedir, filelabel);
+    // BSTPrefixSumGraph g(filedir, filelabel);
     g.update();
-
-    // ofstream memout("mem_MCPS_" + filelabel + ".txt", ios::app);
-    // double pkm = peak_mem() / 1024.0 / 1024.0;
-    // memout << "Total graph: peak memory: " << pkm << " G" << endl;
-    // double pkrss = peak_rss() / 1024.0 / 1024.0;
-    // memout << ", peak rss: " << pkrss << " G" << endl;
+    double pkm = peak_mem() / 1024.0 / 1024.0;
+    cout << "Total graph: peak memory: " << pkm << " G" << endl;
     string queryname;
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
@@ -71,12 +67,16 @@ int main(int argc, char **argv)
                 if (g.outSizeList[u] == 0)
                     return u;
                 uint i = 0;
+                double r;
+                int nodeno;
                 while (i++ < L)
                 {
                     if (g.outSizeList[u] == 0)
                         break;
-                    double r = R.drand() * g.outWeightList[u];
-                    int nodeno = g.BSTList[u].find(r);
+                    r = R.drand() * g.outWeightList[u];
+                    double tmpwei = g.outWeightList[u];
+                    uint tmpsize = g.outSizeList[u];
+                    nodeno = prefixSumIndex(g.AVLList[u], r, 0) - 1;
                     u = g.neighborList[u][nodeno].id;
                 }
                 final_p[u] += 1.0 / w;

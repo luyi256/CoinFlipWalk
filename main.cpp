@@ -217,13 +217,13 @@ int main(int argc, char **argv)
 		sim = new edgepushByLevel(filedir, filelabel, eps, L);
 	else if (algo == "localPush")
 		sim = new localPush(filedir, filelabel, eps, L);
-	else if (algo == "MCSS") //subset sampling
+	else if (algo == "MCSS") // subset sampling
 		sim = new MCSS(filedir, filelabel, eps, L);
-	else if (algo == "MCPS") //prefix sum
+	else if (algo == "MCPS") // prefix sum
 		sim = new MCPS(filedir, filelabel, eps, L);
-	else if (algo == "MCAR") //accept reject
+	else if (algo == "MCAR") // accept reject
 		sim = new MCAR(filedir, filelabel, eps, L);
-	else if (algo == "MCAM") //alias method
+	else if (algo == "MCAM") // alias method
 		sim = new MCAM(filedir, filelabel, eps, L);
 	g = sim->g;
 
@@ -267,6 +267,7 @@ int main(int argc, char **argv)
 			return 0;
 		}
 	}
+	exit(-1);
 	cout << "Input query file from: " << queryname << endl;
 
 	// stringstream ss_sample;

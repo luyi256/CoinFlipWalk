@@ -36,19 +36,13 @@ int main(int argc, char **argv)
         final_exist[i] = 0;
     }
     stringstream ss_run;
-    ss_run << "./analysis/MCAR_" << filelabel << "_runtime.csv";
+    ss_run << "./analysis/MCPSNa_" << filelabel << "_runtime.csv";
     ofstream writecsv;
     writecsv.open(ss_run.str(), ios::app);
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
     {
         double eps = *epsIt;
         query.open(queryname);
-        if (!query)
-        {
-            query.close();
-            g.getQuery(queryname);
-            query.open(queryname);
-        }
         double avg_time = 0;
         for (uint i = 0; i < querynum; i++)
         {
@@ -68,25 +62,21 @@ int main(int argc, char **argv)
                 uint i = 0;
                 while (i++ < L)
                 {
-                    uint outSize = g.outSizeList[u];
-                    double maxw = 0;
-                    for (uint k = 0; k < outSize; k++)
-                    {
-                        if (g.neighborList[u][k].w > maxw)
-                            maxw = g.neighborList[u][k].w;
-                    }
-                    if (outSize == 0)
+                    if (g.outSizeList[u] == 0)
                         break;
-                    while (true)
+                    double sum = 0;
+                    for (auto iter = g.neighborList[u].begin(); iter != g.neighborList[u].end(); iter++)
+                        sum += iter->w;
+                    double r = R.drand() * sum;
+                    double tmp = 0;
+                    auto iter = g.neighborList[u].begin();
+                    for (; iter != g.neighborList[u].end(); iter++)
                     {
-                        double j = floor(R.drand() * outSize);
-                        double r = R.drand();
-                        if (r < g.neighborList[u][j].w / maxw)
-                        {
-                            u = g.neighborList[u][j].id;
+                        tmp += iter->w;
+                        if (tmp > r || fabs(tmp - r) < 1e-6)
                             break;
-                        }
                     }
+                    u = iter->id;
                 }
                 final_p[u] += 1.0 / w;
                 if (final_exist[u] == 0)
@@ -97,14 +87,9 @@ int main(int argc, char **argv)
             }
             clock_t t1 = clock();
             avg_time += (t1 - t0) / (double)CLOCKS_PER_SEC;
-            // ofstream memout("mem_MCAR_" + filelabel + ".txt", ios::app);
-            double pkm = peak_mem() / 1024.0 / 1024.0;
-            cout << "Total process: peak memory: " << pkm << " G" << endl;
-            // double pkrss = peak_rss() / 1024.0 / 1024.0;
-            // memout << ", peak rss: " << pkrss << " G" << endl;
             cout << "Query time for node " << nodeId << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s";
             stringstream ss_dir, ss;
-            ss_dir << "./result/MCAR/" << filelabel << "/" << L << "/" << eps << "/";
+            ss_dir << "./result/MCPSNa/" << filelabel << "/" << L << "/" << eps << "/";
             ss << ss_dir.str() << nodeId << ".txt";
             cout << "Write query results in file: " << ss.str() << endl;
             mkpath(ss_dir.str());
@@ -127,11 +112,10 @@ int main(int argc, char **argv)
         cout << endl;
         cout << "query time: " << avg_time / (double)querynum << " s" << endl;
         cout << "==== "
-             << "MCAR"
+             << "MCPSNa"
              << " with " << eps << " on " << filelabel << " done!====" << endl;
         writecsv << avg_time / (double)querynum << ',';
     }
-
     delete[] final_p;
     delete[] final_node;
     delete[] final_exist;

@@ -20,12 +20,8 @@ int main(int argc, char **argv)
     argParser(argc, argv, filedir, filelabel, querynum, epss, L);
     AliasMethodGraph g(filedir, filelabel);
     g.update();
-
-    // ofstream memout("mem_MCAM_" + filelabel + ".txt", ios::app);
-    // double pkm = peak_mem() / 1024.0 / 1024.0;
-    // memout << "Total graph: peak memory: " << pkm << " G" << endl;
-    // double pkrss = peak_rss() / 1024.0 / 1024.0;
-    // memout << ", peak rss: " << pkrss << " G" << endl;
+    double pkm = peak_mem() / 1024.0 / 1024.0;
+    cout << "Total graph: peak memory: " << pkm << " G" << endl;
     string queryname;
     queryname = "./query/" + filelabel + ".query";
     ifstream query;

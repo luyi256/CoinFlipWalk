@@ -1,35 +1,133 @@
+from turtle import color
+import matplotlib
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+from datetime import datetime
+import pytz
+import os
+# args
+# 选择提取哪些数据集，会往本地写数据，文件：'.datalog/[date]_[measurement].data'
+datasets = ["twitter-2010", "threads-stack-overflow"]
+datasets_alias = ['TW', 'TH']
+# "threads-stack-overflow" "colisten-Spotify" "bitcoin-temporal" "indochina-2004" "twitter-2010"
+log_measures = ['memory', 'memory_overhead', 'time', 'time_overhead']
+plot_measures = ['memory', 'memory_overhead', 'time', 'time_overhead']
 
-# process
-x4=[38.0162,198.845,17.8066,0.502258,3.01916,] # AM
-x1=[8.32519,83.2137,6.81605,0.196537,1.15848,] # AR
-x3=[25.7638,313.589,25.3449,0.698868,4.03053,] # PS
-x2=[15.4634,84.4233,7.85141,0.215542,1.51497,] # SS
-x5=[8.32519,83.2137,6.81605,0.196537,1.15848,] # Na
-x6=[17.866,141.226,12.547,0.338959,2.16952,] # BIT
+# algos = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
+algos = ['MCAM', 'MCSS', 'MCPS', 'MCAR']
+algo_alias = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
 
-base=[8.32519,83.2137,6.81605,0.196537,1.15848,]
-print([ i-j for i,j in zip(x4,base)])
-print([ i-j for i,j in zip(x1,base)])
-print([ i-j for i,j in zip(x3,base)])
-print([ i-j for i,j in zip(x2,base)])
-print([ i-j for i,j in zip(x5,base)])
-print([ i-j for i,j in zip(x6,base)])
+tz = pytz.timezone('Asia/Shanghai')
+# 避免生成的pdf在苹果系统中无法正确显示线形
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 
-29.69101, 115.6313, 10.990549999999999, 0.305721, 1.86068
-0.0, 0.0, 0.0, 0.0, 0.0
-17.43861, 230.37529999999998, 18.52885, 0.5023310000000001, 2.8720499999999998
-7.138210000000001, 1.2095999999999947, 1.0353599999999998, 0.019005000000000022, 0.35649
-0.0, 0.0, 0.0, 0.0, 0.0
-9.54081, 58.012299999999996, 5.730950000000001, 0.14242200000000002, 1.01104
+# RejectionWalk的位置，求overhead的时候需要减去
+to_sub = 0
+for i, algo in enumerate(algos):
+    if algo == 'MCAR' or algo == 'RejectionWalk':
+        to_sub = i
 
+time = []
+memory = []
+for dataset in datasets:
+    tmp_time = []
+    tmp_memory = []
+    for algo in algos:
+        filename = './runlog/' + algo + '_' + dataset + '.log'
+        tmp_del_time = 0
+        tmp_add_time = 0
+        with open(filename, 'r') as f:
+            for i, line in enumerate(f.readlines()):
+                if i == 4:  # del time
+                    tmp_del_time = float(line.split()[5])
+                if i == 5:
+                    tmp_add_time = float(line.split()[5])
+                if i == 6:
+                    tmp_memory.append(float(line.split()[4]))
+                    break
+        tmp_time.append((tmp_del_time + tmp_add_time) / 2)
+    time.append(tmp_time)
+    memory.append(tmp_memory)
+print(time)
+print(memory)
+time_overhead = [[j - i[to_sub] for j in i] for i in time]
+memory_overhead = [[j - i[to_sub] for j in i] for i in memory]
+print(time_overhead)
+print(memory_overhead)
 
-# 古早版本
-# 12.56682, 0.15366000000000002, 115.6845, 0.30181899999999995, 9.94013
-# 0.7167300000000001, 0.008876999999999996, 0.05380000000000962, 0.0008350000000000024, 0.11056000000000044
-# 18.15532, 0.20796600000000004, 230.42949999999996, 0.503052, 18.63933
-# 9.288720000000001, 0.12330999999999999, 1.370900000000006, 0.021232, 1.3668399999999998
+dt = datetime.now(tz).strftime("%Y-%m-%d %H:%M")
+path = "./datalog/" + dt + '/'
+if (os.path.exists(path) == False):
+    os.makedirs(path)
+for measure in log_measures:
+    isTime = False if measure.find("time") == -1 else True
+    isOverhead = False if measure.find("overhead") == -1 else True
+    if isTime and not isOverhead:
+        filename = dt + "_" + "time.data"
+        arr = time
+    elif isTime and isOverhead:
+        filename = dt + "_" + "time_overhead.data"
+        arr = time_overhead
+    elif not isTime and not isOverhead:
+        filename = dt + "_" + "memory.data"
+        arr = memory
+    elif not isTime and isOverhead:
+        filename = dt + "_" + "memory_overhead.data"
+        arr = memory_overhead
 
-# 20.892,0.267376,198.898,0.498318,16.7562
-# 9.04191, 0.122593,83.2673,0.197334,6.92663
-# 26.4805,0.321682,313.643,0.699551,25.4554
-# 17.6139,0.237026,84.5844,0.217731,8.18291
+    f = open(path + filename, 'w')
+    for i, subarr in enumerate(arr):
+        f.write(datasets[i] + ':')
+        f.write(str(subarr))
+        f.write('\n')
+    f.close()
+
+num_dataset = len(datasets)
+# colors = [(0, 0.4470, 0.7410), (0.8500, 0.3250, 0.0980),
+#           (0.4940, 0.1840, 0.5560), (0.6353, 0.07843, 0.1843)]
+colors = ['#263FA9', '#447B48', '#E85472', '#A686EC']
+# ylims = [50, 500, 40, 6]#8382EB
+#EC7F4B
+#263FA9
+#447B48
+for measure in plot_measures:
+    isTime = False if measure.find("time") == -1 else True
+    isOverhead = False if measure.find("overhead") == -1 else True
+    if isTime and not isOverhead:
+        arr = time
+    elif isTime and isOverhead:
+        arr = time_overhead
+    elif not isTime and not isOverhead:
+        arr = memory
+    elif not isTime and isOverhead:
+        arr = memory_overhead
+    for k in range(num_dataset):
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.bar(algos,
+               arr[k],
+               tick_label=algo_alias,
+               color='none',
+               log=isTime,
+               linewidth=3)
+        ax.tick_params(axis='x', labelsize=25, rotation=15)
+        plt.yticks(fontsize=18)
+        if isTime and isOverhead:
+            ax.set_ylabel("overhead time (s)", fontsize=25)
+        elif isTime and not isOverhead:
+            ax.set_ylabel("time (s)", fontsize=25)
+        elif not isTime and isOverhead:
+            ax.set_ylabel("overhead memory (GB)", fontsize=25)
+        else:
+            ax.set_ylabel("memory (GB)", fontsize=25)
+        hatches = ["/", "x", ".", "\\"]
+        ax.set_title(datasets_alias[k], fontsize=25)
+        for i, patch in enumerate(ax.patches):
+            patch.set_hatch(hatches[i])
+            patch.set_edgecolor(colors[i])
+        plt.rcParams['hatch.linewidth'] = 3.0
+        plt.tight_layout()
+
+        plt.savefig(path + "{}_{}.png".format(measure, datasets_alias[k]))
+        plt.savefig(path + "{}_{}.pdf".format(measure, datasets_alias[k]))

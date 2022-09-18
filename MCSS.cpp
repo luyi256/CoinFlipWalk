@@ -6,7 +6,8 @@
 #include <cmath>
 #include <sys/time.h>
 #include <unordered_map>
-
+#include <boost/math/distributions/binomial.hpp>
+#include <boost/random.hpp>
 #include "Graph.h"
 using namespace std;
 typedef unsigned int uint;
@@ -20,19 +21,11 @@ int main(int argc, char **argv)
     string filedir, filelabel;
     double thetad;
     argParser4MCSS(argc, argv, filedir, filelabel, querynum, epss, L, thetad);
-    // cout << "====================" << endl
-    //      << filedir << filelabel << endl
-    //      << "querynum:" << querynum << endl
-    //      << "L:" << L << endl
-    //      << "thetad:" << thetad << endl;
+    thetad = 1.0;
     subsetGraph g(filedir, filelabel);
     g.update();
-
-    // ofstream memout("mem_MCSS_" + filelabel + ".txt", ios::app);
-    // double pkm = peak_mem() / 1024.0 / 1024.0;
-    // memout << "Total graph: peak memory: " << pkm << " G" << endl;
-    // double pkrss = peak_rss() / 1024.0 / 1024.0;
-    // memout << ", peak rss: " << pkrss << " G" << endl;
+    double pkm = peak_mem() / 1024.0 / 1024.0;
+    cout << "Total graph: peak memory: " << pkm << " G" << endl;
     string queryname;
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
@@ -68,9 +61,9 @@ int main(int argc, char **argv)
         final_exist[i] = 0;
     }
     int seed = chrono::system_clock::now().time_since_epoch().count();
-    std::default_random_engine generator(seed);
+    boost::mt19937 rng;
     stringstream ss_run;
-    ss_run << "./analysis/MCSS_" << thetad << "_" << filelabel << "_runtime.csv";
+    ss_run << "./analysis/MCSS_" << filelabel << "_runtime.csv";
     ofstream writecsv;
     writecsv.open(ss_run.str(), ios::app);
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
@@ -78,7 +71,6 @@ int main(int argc, char **argv)
         double eps = *epsIt;
         query.open(queryname);
         double avg_time = 0;
-        double randomratesum = 0, pushratesum = 0;
         for (uint i = 0; i < querynum; i++)
         {
             Random R;
@@ -89,11 +81,6 @@ int main(int argc, char **argv)
             clock_t t0 = clock();
             uint cnt1, cnt2;
             uint levelID = L % 2;
-            for (uint j = 0; j < final_count; j++)
-            {
-                final_p[final_node[j]] = 0;
-                final_exist[final_node[j]] = 0;
-            }
             final_count = 0;
             uint nr = 0.1 * L / eps * 4;
             cout << "samples=" << nr << endl;
@@ -118,7 +105,6 @@ int main(int argc, char **argv)
                         double tempP = prob[tempLevelID][tempNode];
                         cs_exist[tempLevelID][tempNode] = 0;
                         prob[tempLevelID][tempNode] = 0;
-
                         if (tempLevel == L)
                         {
                             if (final_exist[tempNode] == 0)
@@ -160,9 +146,8 @@ int main(int argc, char **argv)
                             {
                                 randomnum++;
                                 uint subsetSize = setIt->second.size();
-                                // cout<<"subsetSize="<<subsetSize<<endl;//hanzhi
-                                std::binomial_distribution<int> distribution(subsetSize, increMax / thetad);
-                                double rbio = distribution(generator);
+                                boost::binomial_distribution<> bio(subsetSize, increMax / thetad);
+                                int rbio = bio(rng);
                                 for (uint j = 0; j < rbio; j++)
                                 {
                                     double r1 = floor(R.drand() * subsetSize);
@@ -216,16 +201,9 @@ int main(int argc, char **argv)
 
             clock_t t1 = clock();
             avg_time += (t1 - t0) / (double)CLOCKS_PER_SEC;
-            // ofstream memout("mem_MCSS_" + filelabel + ".txt", ios::app);
             double pkm = peak_mem() / 1024.0 / 1024.0;
             cout << "Total process: peak memory: " << pkm << " G" << endl;
-            // double pkrss = peak_rss() / 1024.0 / 1024.0;
-            // memout << ", peak rss: " << pkrss << " G" << endl;
             cout << "Query time for node " << u << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s";
-            // cout << "pushrate=" << pushrate / can_cnt << endl
-            //      << "randomrate=" << randomrate / can_cnt << endl;
-            pushratesum += pushrate / can_cnt;
-            randomratesum += randomrate / can_cnt;
             stringstream ss_dir, ss;
             ss_dir << "./result/MCSS/" << filelabel << "/" << L << "/" << eps << "/";
             ss << ss_dir.str() << u << ".txt";
@@ -241,13 +219,14 @@ int main(int argc, char **argv)
             for (uint j = 0; j < final_count; j++)
             {
                 fout << final_node[j] << " " << final_p[final_node[j]] << endl;
+                final_p[final_node[j]] = 0;
+                final_exist[final_node[j]] = 0;
             }
             fout.close();
         }
         query.close();
         cout << endl;
         cout << "query time: " << avg_time / (double)querynum << " s" << endl;
-        cout << pushratesum / (double)querynum << "," << randomratesum / (double)querynum << endl;
         cout << "==== "
              << "MCSS"
              << " with " << eps << " on " << filelabel << " done!====" << endl;
