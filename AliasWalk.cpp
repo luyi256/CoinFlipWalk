@@ -17,11 +17,16 @@ int main(int argc, char **argv)
     vector<double> epss;
     uint L = 10;
     string filedir, filelabel;
-    argParser(argc, argv, filedir, filelabel, querynum, epss, L);
+    int is_update = 0;
+    argParser(argc, argv, filedir, filelabel, querynum, epss, L, is_update);
     AliasMethodGraph g(filedir, filelabel);
-    g.update();
-    double pkm = peak_mem() / 1024.0 / 1024.0;
-    cout << "Total graph: peak memory: " << pkm << " G" << endl;
+    if (is_update)
+    {
+        g.update();
+        double pkm = peak_mem() / 1024.0 / 1024.0;
+        cout << "Total graph: peak memory: " << pkm << " G" << endl;
+        exit(0);
+    }
     string queryname;
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
@@ -37,7 +42,7 @@ int main(int argc, char **argv)
         final_exist[i] = 0;
     }
     stringstream ss_run;
-    ss_run << "./analysis/MCAM_" << filelabel << "_runtime.csv";
+    ss_run << "./analysis/AliasWalk_" << filelabel << "_runtime.csv";
     ofstream writecsv;
     writecsv.open(ss_run.str(), ios::app);
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
@@ -81,14 +86,14 @@ int main(int argc, char **argv)
             }
             clock_t t1 = clock();
             avg_time += (t1 - t0) / (double)CLOCKS_PER_SEC;
-            // ofstream memout("mem_MCAM_" + filelabel + ".txt", ios::app);
+            // ofstream memout("mem_AliasWalk_" + filelabel + ".txt", ios::app);
             double pkm = peak_mem() / 1024.0 / 1024.0;
             cout << "Total process: peak memory: " << pkm << " G" << endl;
             // double pkrss = peak_rss() / 1024.0 / 1024.0;
             // memout << ", peak rss: " << pkrss << " G" << endl;
             cout << "Query time for node " << nodeId << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s";
             stringstream ss_dir, ss;
-            ss_dir << "./result/MCAM/" << filelabel << "/" << L << "/" << eps << "/";
+            ss_dir << "./result/AliasWalk/" << filelabel << "/" << L << "/" << eps << "/";
             ss << ss_dir.str() << nodeId << ".txt";
             cout << "Write query results in file: " << ss.str() << endl;
             mkpath(ss_dir.str());
@@ -109,7 +114,7 @@ int main(int argc, char **argv)
         cout << endl;
         cout << "query time: " << avg_time / (double)querynum << " s" << endl;
         cout << "==== "
-             << "MCAM"
+             << "AliasWalk"
              << " with " << eps << " on " << filelabel << " done!====" << endl;
         writecsv << avg_time / (double)querynum << ',';
     }

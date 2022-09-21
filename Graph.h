@@ -740,11 +740,11 @@ public:
 	~AliasMethodGraph() {}
 };
 
-struct smallSetID
-{
-	int id;
-	smallSetID *next, *pre;
-};
+// struct smallSetID
+// {
+// 	int id;
+// 	smallSetID *next, *pre;
+// };
 class subsetGraph
 {
 public:
@@ -754,8 +754,7 @@ public:
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
 	unordered_map<uint, unordered_map<uint, pair<int, int>>> adjList;
-	// unordered_map<uint, smallSetID *> smallSetHead;
-	unordered_map<uint, unordered_map<int, smallSetID *>> smallSetMap;
+	// unordered_map<uint, unordered_map<int, smallSetID *>> smallSetMap;
 	subsetGraph() {}
 	subsetGraph(const string &_filedir, const string &_filelabel)
 	{

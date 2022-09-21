@@ -14,18 +14,21 @@ typedef unsigned int uint;
 
 int main(int argc, char **argv)
 {
-    char *endptr;
     long querynum = 10;
     vector<double> epss;
     uint L = 10;
     string filedir, filelabel;
-    double thetad;
-    argParser4MCSS(argc, argv, filedir, filelabel, querynum, epss, L, thetad);
-    thetad = 1.0;
+    double thetad = 1.0;
+    int is_update = 0;
+    argParser(argc, argv, filedir, filelabel, querynum, epss, L, is_update);
     subsetGraph g(filedir, filelabel);
-    g.update();
-    double pkm = peak_mem() / 1024.0 / 1024.0;
-    cout << "Total graph: peak memory: " << pkm << " G" << endl;
+    if (is_update)
+    {
+        g.update();
+        double pkm = peak_mem() / 1024.0 / 1024.0;
+        cout << "Total graph: peak memory: " << pkm << " G" << endl;
+        exit(0);
+    }
     string queryname;
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
@@ -63,7 +66,7 @@ int main(int argc, char **argv)
     int seed = chrono::system_clock::now().time_since_epoch().count();
     boost::mt19937 rng;
     stringstream ss_run;
-    ss_run << "./analysis/MCSS_" << filelabel << "_runtime.csv";
+    ss_run << "./analysis/CoinFlipWalk_" << filelabel << "_runtime.csv";
     ofstream writecsv;
     writecsv.open(ss_run.str(), ios::app);
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
@@ -120,7 +123,7 @@ int main(int argc, char **argv)
                         double incre = tempP / outVertWt;
 
                         uint pushnum = 0, randomnum = 0;
-                        for (auto setIt = g.neighborList[tempNode].begin(); setIt != g.neighborList[tempNode].end(); setIt++) // unordered_map没有顺序迭代的方法
+                        for (auto setIt = g.neighborList[tempNode].begin(); setIt != g.neighborList[tempNode].end(); setIt++)
                         {
                             int setID = setIt->first;
                             double powans = pow(2, setID);
@@ -163,32 +166,6 @@ int main(int argc, char **argv)
                                         }
                                     }
                                 }
-
-                                // int curti = 0;
-                                // while (curti < subsetSize)
-                                // {
-                                // 	int seed_geo = chrono::system_clock::now().time_since_epoch().count();
-                                // 	std::default_random_engine generator(seed_geo);
-                                // 	std::geometric_distribution<int> distribution(pmax);
-                                // 	int rgeo = distribution(generator);
-                                // 	curti += rgeo;
-                                // 	if (curti >= subsetSize)
-                                // 	{
-                                // 		break;
-                                // 	}
-                                // uint nodeidx = curti;
-                                // double r = R.drand();
-                                // node tmp = setIt->second[nodeidx];
-                                // if (r < tmp.w / pow(2, setID))
-                                // {
-                                // 	prob[newLevelID][tmp.id] += tempP;
-                                // 	if (cs_exist[newLevelID][tmp.id] == 0)
-                                // 	{
-                                // 		cs_exist[newLevelID][tmp.id] = 1;
-                                // 		candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
-                                // 	}
-                                // }
-                                // curti += 1;
                             }
                         }
                         pushrate += pushnum / double(pushnum + randomnum);
@@ -201,11 +178,9 @@ int main(int argc, char **argv)
 
             clock_t t1 = clock();
             avg_time += (t1 - t0) / (double)CLOCKS_PER_SEC;
-            double pkm = peak_mem() / 1024.0 / 1024.0;
-            cout << "Total process: peak memory: " << pkm << " G" << endl;
             cout << "Query time for node " << u << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s";
             stringstream ss_dir, ss;
-            ss_dir << "./result/MCSS/" << filelabel << "/" << L << "/" << eps << "/";
+            ss_dir << "./result/CoinFlipWalk/" << filelabel << "/" << L << "/" << eps << "/";
             ss << ss_dir.str() << u << ".txt";
             cout << "Write query results in file: " << ss.str() << endl;
             mkpath(ss_dir.str());
@@ -228,7 +203,7 @@ int main(int argc, char **argv)
         cout << endl;
         cout << "query time: " << avg_time / (double)querynum << " s" << endl;
         cout << "==== "
-             << "MCSS"
+             << "CoinFlipWalk"
              << " with " << eps << " on " << filelabel << " done!====" << endl;
         writecsv << avg_time / (double)querynum << ',';
     }

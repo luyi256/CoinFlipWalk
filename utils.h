@@ -20,6 +20,7 @@ unsigned long long peak_mem()
     fclose(fp);
     return peaksize;
 }
+
 unsigned long long peak_rss()
 {
     char buf[1024];
@@ -111,7 +112,7 @@ void readGraph(string filelabel, string filedir, uint *outEL, uint *outPL, doubl
     return;
 }
 
-void argParser4MCSS(int argc, char **argv, string &filedir, string &filelabel, long &querynum, vector<double> &epss, uint &L, double &thetad)
+void argParser(int argc, char **argv, string &filedir, string &filelabel, long &querynum, vector<double> &epss, uint &L, int &update)
 // void argParser(int argc, char **argv, string &filedir, string &filelabel, long &querynum, double &eps, uint &L)
 {
     char *endptr;
@@ -138,69 +139,9 @@ void argParser4MCSS(int argc, char **argv, string &filedir, string &filelabel, l
             }
             i--;
         }
-        else if (!strcmp(argv[i], "-t"))
+        else if (!strcmp(argv[i], "-u"))
         {
-            if (++i < argc)
-            {
-                thetad = strtod(argv[i], &endptr);
-            }
-        }
-        else if (!strcmp(argv[i], "-qn"))
-        {
-            if (++i < argc)
-                querynum = strtod(argv[i], &endptr);
-            if ((querynum < -2) && endptr)
-            {
-                cerr << "Invalid querynum argument:" << querynum << endl;
-                exit(1);
-            }
-        }
-        else if (!strcmp(argv[i], "-l"))
-        {
-            int tempL;
-            if (++i < argc)
-                tempL = int(strtod(argv[i], &endptr));
-            if ((tempL < 0) && endptr)
-            {
-                cerr << "Invalid hop number" << endl;
-                exit(1);
-            }
-            L = uint(tempL);
-        }
-        else
-        {
-            cerr << "Err args:" << argv[i] << endl;
-            exit(1);
-        }
-        i++;
-    }
-}
-
-void argParser(int argc, char **argv, string &filedir, string &filelabel, long &querynum, vector<double> &epss, uint &L)
-{
-    char *endptr;
-    int i = 1;
-    while (i < argc)
-    {
-        if (!strcmp(argv[i], "-d"))
-        {
-            if (++i < argc)
-                filedir = argv[i];
-        }
-        else if (!strcmp(argv[i], "-f"))
-        {
-            if (++i < argc)
-                filelabel = argv[i];
-        }
-        else if (!strcmp(argv[i], "-e"))
-        {
-            while (++i < argc && argv[i][0] != '-')
-            {
-                // eps = strtod(argv[++i], &endptr);
-                double eps = strtod(argv[i], &endptr);
-                epss.push_back(eps);
-            }
-            i--;
+            update = 1;
         }
         else if (!strcmp(argv[i], "-qn"))
         {

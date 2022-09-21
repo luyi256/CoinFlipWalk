@@ -7,17 +7,22 @@ from datetime import datetime
 import pytz
 import os
 # args
-# 选择提取哪些数据集，会往本地写数据，文件：'.datalog/[date]_[measurement].data'
-datasets = ["twitter-2010", "threads-stack-overflow"]
-datasets_alias = ['TW', 'TH']
+# 选择提取哪些数据集，会往本地写数据，文件：'./result_update/[date]_[measurement].data'
+datasets = ["threads-stack-overflow"]
 # "threads-stack-overflow" "colisten-Spotify" "bitcoin-temporal" "indochina-2004" "twitter-2010"
 log_measures = ['memory', 'memory_overhead', 'time', 'time_overhead']
 plot_measures = ['memory', 'memory_overhead', 'time', 'time_overhead']
 
-# algos = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
-algos = ['MCAM', 'MCSS', 'MCPS', 'MCAR']
+algos = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
+# algos = ['MCAM', 'MCSS', 'MCPS', 'MCAR']
 algo_alias = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
-
+datasets_alias = {
+    "twitter-2010": 'TW',
+    "threads-stack-overflow": 'TH',
+    "colisten-Spotify": 'CS',
+    "indochina-2004": 'IC',
+    "bitcoin-temporal": 'BT'
+}
 tz = pytz.timezone('Asia/Shanghai')
 # 避免生成的pdf在苹果系统中无法正确显示线形
 matplotlib.rcParams['pdf.fonttype'] = 42
@@ -35,7 +40,7 @@ for dataset in datasets:
     tmp_time = []
     tmp_memory = []
     for algo in algos:
-        filename = './runlog/' + algo + '_' + dataset + '.log'
+        filename = './runlog/' + algo + '_' + dataset + '_update.log'
         tmp_del_time = 0
         tmp_add_time = 0
         with open(filename, 'r') as f:
@@ -57,8 +62,8 @@ memory_overhead = [[j - i[to_sub] for j in i] for i in memory]
 print(time_overhead)
 print(memory_overhead)
 
-dt = datetime.now(tz).strftime("%Y-%m-%d %H:%M")
-path = "./datalog/" + dt + '/'
+dt = datetime.now(tz).strftime("%m-%d")
+path = "./result_update/" + dt + '/'
 if (os.path.exists(path) == False):
     os.makedirs(path)
 for measure in log_measures:
@@ -103,7 +108,7 @@ for measure in plot_measures:
         arr = memory
     elif not isTime and isOverhead:
         arr = memory_overhead
-    for k in range(num_dataset):
+    for k, dataset in enumerate(datasets):
         fig, ax = plt.subplots(figsize=(10, 5))
         ax.bar(algos,
                arr[k],
@@ -122,12 +127,13 @@ for measure in plot_measures:
         else:
             ax.set_ylabel("memory (GB)", fontsize=25)
         hatches = ["/", "x", ".", "\\"]
-        ax.set_title(datasets_alias[k], fontsize=25)
+        ax.set_title(datasets_alias[dataset], fontsize=25)
         for i, patch in enumerate(ax.patches):
             patch.set_hatch(hatches[i])
             patch.set_edgecolor(colors[i])
         plt.rcParams['hatch.linewidth'] = 3.0
         plt.tight_layout()
 
-        plt.savefig(path + "{}_{}.png".format(measure, datasets_alias[k]))
-        plt.savefig(path + "{}_{}.pdf".format(measure, datasets_alias[k]))
+        plt.savefig(path +
+                    "{}_{}.png".format(measure, datasets_alias[dataset]))
+        # plt.savefig(path + "{}_{}.pdf".format(measure, datasets_alias[dataset]))

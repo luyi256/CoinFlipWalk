@@ -53,3 +53,9 @@ thetad=*/
 fig/
 powermethod
 datalog/
+AliasWalk
+CoinFlipWalk
+PrefixWalk
+RejectionWalk
+result_query/
+result_update/
