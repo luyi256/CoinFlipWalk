@@ -19,6 +19,7 @@
 #include "AVL.h"
 #include "rbtree.h"
 #include "utils.h"
+#include "Priority.h"
 #include <chrono>
 using namespace std;
 
@@ -754,6 +755,7 @@ public:
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
 	unordered_map<uint, unordered_map<uint, pair<int, int>>> adjList;
+	unordered_map<uint, Priority> subsetHeap;
 	// unordered_map<uint, unordered_map<int, smallSetID *>> smallSetMap;
 	subsetGraph() {}
 	subsetGraph(const string &_filedir, const string &_filelabel)
@@ -820,6 +822,7 @@ public:
 			outSizeList[i] = outSize;
 			outWeightList[i] = outWeight;
 			// int gap = floor(log2(outWeight / (outSize * outSize))) + 1;
+			vector<int> subsetWei;
 			for (uint j = 0; j < outSize; j++)
 			{
 				int subset = floor(log2(neighbor[j].w)) + 1;
@@ -832,9 +835,13 @@ public:
 				// 	smallSetHead[i]->next = newSmallSet;
 				// 	smallSetMap[i][subset] = newSmallSet;
 				// }
+				if (neighborList[i][subset].size() == 0)
+					subsetWei.push_back(subset);
 				neighborList[i][subset].push_back(neighbor[j]);
 				adjList[i][neighbor[j].id] = make_pair(subset, neighborList[i][subset].size() - 1);
 			}
+			sort(subsetWei.begin(), subsetWei.end(), greater<int>());
+			subsetHeap[i] = Priority(subsetWei);
 		}
 		neiNumIn.close();
 		neiWeightIn.close();
@@ -937,6 +944,8 @@ public:
 			uint s = sarr[i];
 			uint t = tarr[i];
 			int subset = floor(log2(warr[i])) + 1;
+			if (neighborList[s][subset].size() == 0)
+				subsetHeap[s].addKey(subset);
 			// double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
 			neighborList[s][subset].push_back(node(t, warr[i]));
 			outSizeList[s]++;

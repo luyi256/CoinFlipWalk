@@ -63,12 +63,14 @@ int main(int argc, char **argv)
         final_node[i] = 0;
         final_exist[i] = 0;
     }
-    int seed = chrono::system_clock::now().time_since_epoch().count();
-    boost::mt19937 rng;
     stringstream ss_run;
     ss_run << "./analysis/CoinFlipWalk_" << filelabel << "_runtime.csv";
     ofstream writecsv;
     writecsv.open(ss_run.str(), ios::app);
+    int seed = chrono::system_clock::now().time_since_epoch().count();
+    default_random_engine generator(seed);
+    int count = 0;
+    int shift_count = 0;
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
     {
         double eps = *epsIt;
@@ -76,6 +78,7 @@ int main(int argc, char **argv)
         double avg_time = 0;
         for (uint i = 0; i < querynum; i++)
         {
+            unordered_map<uint, vector<int>> sortedSubsetWei;
             Random R;
             uint u;
             double pushrate = 0, randomrate = 0, can_cnt = 0;
@@ -119,23 +122,45 @@ int main(int argc, char **argv)
                             continue;
                         }
                         uint outSize = g.outSizeList[tempNode];
+                        if (outSize <= 0)
+                            continue;
                         double outVertWt = g.outWeightList[tempNode];
                         double incre = tempP / outVertWt;
-
-                        uint pushnum = 0, randomnum = 0;
-                        for (auto setIt = g.neighborList[tempNode].begin(); setIt != g.neighborList[tempNode].end(); setIt++)
+                        // if (sortedSubsetWei.find(tempNode) == sortedSubsetWei.end())
+                        // {
+                        //     vector<int> tmp;
+                        //     vector<int> &heap = g.subsetHeap[tempNode].heap;
+                        //     int s = heap.size();
+                        //     tmp.push_back(heap[0]);
+                        //     tmp.resize(s);
+                        //     for (int pivot = 1; pivot < s; pivot++)
+                        //     {
+                        //         int idx = pivot - 1;
+                        //         while (heap[pivot] > tmp[idx])
+                        //         {
+                        //             tmp[idx + 1] = tmp[idx];
+                        //             idx--;
+                        //             shift_count++;
+                        //         }
+                        //         tmp[idx + 1] = heap[pivot];
+                        //     }
+                        //     sortedSubsetWei[tempNode] = tmp;
+                        // }
+                        vector<int> &sortedSubset = g.subsetHeap[tempNode].heap;
+                        int s = sortedSubset.size();
+                        int idx = 0;
+                        while (idx < s)
                         {
-                            int setID = setIt->first;
-                            double powans = pow(2, setID);
+                            int subsetID = sortedSubset[idx];
+                            auto &subset = g.neighborList[tempNode][subsetID];
+                            int subsetsize = subset.size();
+                            double powans = pow(2, subsetID);
                             double increMax = incre * powans;
-                            double pmax = powans / outVertWt; // the maximum sampling probability in this subset;
                             if (increMax >= thetad)
                             {
-                                pushnum++;
-                                uint subsetSize = setIt->second.size();
-                                for (uint setidx = 0; setidx < subsetSize; setidx++)
+                                for (uint setidx = 0; setidx < subsetsize; setidx++)
                                 {
-                                    node &tmpnode = setIt->second[setidx];
+                                    node &tmpnode = subset[setidx];
                                     uint newNode = tmpnode.id;
                                     prob[newLevelID][newNode] += incre * tmpnode.w;
                                     if (cs_exist[newLevelID][newNode] == 0)
@@ -144,40 +169,54 @@ int main(int argc, char **argv)
                                         candidate_set[newLevelID][candidate_count[newLevelID]++] = newNode;
                                     }
                                 }
+                                idx++;
+                                continue;
                             }
-                            else
+                            geometric_distribution<int> distribution(increMax);
+                            int sum = distribution(generator);
+                            int num = 0;
+                            while (sum < subsetsize)
                             {
-                                randomnum++;
-                                uint subsetSize = setIt->second.size();
-                                boost::binomial_distribution<> bio(subsetSize, increMax / thetad);
-                                int rbio = bio(rng);
-                                for (uint j = 0; j < rbio; j++)
+                                num++;
+                                sum += distribution(generator);
+                            }
+                            while (num--)
+                            {
+                                int r1 = floor(R.drand() * subsetsize);
+                                node tmp = subset[r1];
+                                double r2 = R.drand();
+                                if (r2 < tmp.w / powans)
                                 {
-                                    double r1 = floor(R.drand() * subsetSize);
-                                    node tmp = setIt->second[r1];
-                                    double r2 = R.drand();
-                                    if (r2 < tmp.w / powans)
+                                    prob[newLevelID][tmp.id] += 1.0;
+                                    if (cs_exist[newLevelID][tmp.id] == 0)
                                     {
-                                        prob[newLevelID][tmp.id] += thetad;
-                                        if (cs_exist[newLevelID][tmp.id] == 0)
-                                        {
-                                            cs_exist[newLevelID][tmp.id] = 1;
-                                            candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
-                                        }
+                                        cs_exist[newLevelID][tmp.id] = 1;
+                                        candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
                                     }
                                 }
                             }
+                            int diff = sum - subsetsize;
+                            while (idx < s)
+                            {
+                                idx++;
+                                int nextsize = g.neighborList[tempNode][sortedSubset[idx]].size();
+                                if (diff > nextsize)
+                                {
+                                    diff -= nextsize;
+                                    count++;
+                                }
+                                else
+                                    break;
+                            }
                         }
-                        pushrate += pushnum / double(pushnum + randomnum);
-                        randomrate += randomnum / double(pushnum + randomnum);
-                        can_cnt += 1;
                     }
                     tempLevel++;
                 }
             }
-
             clock_t t1 = clock();
             avg_time += (t1 - t0) / (double)CLOCKS_PER_SEC;
+            cout << "skip count:" << count << endl;
+            cout << "shift count:" << shift_count << endl;
             cout << "Query time for node " << u << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s";
             stringstream ss_dir, ss;
             ss_dir << "./result/CoinFlipWalk/" << filelabel << "/" << L << "/" << eps << "/";
