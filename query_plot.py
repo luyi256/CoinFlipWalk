@@ -5,10 +5,13 @@ from datetime import datetime
 import pytz
 #! args
 # 选择提取哪些数据集，会往本地写数据，文件：'.datalog/[date]_[measurement].data'
-datasets = ["threads-stack-overflow"]
+datasets = [
+    "threads-stack-overflow", "colisten-Spotify", "bitcoin-temporal",
+    "indochina-2004"
+]
 # "threads-stack-overflow" "colisten-Spotify" "bitcoin-temporal" "indochina-2004" "twitter-2010"
 path = '/home/lu_yi/dynamic-monte-carlo/analysis/'
-measures = [ 'conductance', 'maxerr', 'precision']
+measures = ['conductance', 'maxerr', 'precision']
 #!! 算法是必须跑四个的，不然要牵一发而动全身
 #! 常量设置
 # 避免生成的pdf在苹果系统中无法正确显示线形
@@ -41,6 +44,8 @@ for measure in measures:
     for dataset in datasets:
         fig, ax = plt.subplots()
         for k, algo in enumerate(algos):
+            print(dataset)
+            print(algo)
             runtime_file = open(path + algo + '_' + dataset + '_runtime.csv',
                                 'r')
             runerror_file = open(path + algo + '_' + dataset + '_runerror.csv',
@@ -48,9 +53,9 @@ for measure in measures:
             runtime = [float(i) for i in runtime_file.read().split(',')[:-1]]
             runerror = [[float(j) for j in i.split(',')]
                         for i in runerror_file.read().split('\n')[:-1]]
-            print(runtime)
-            print(runerror)
-            print([i[measureIdx[measure]] for i in runerror])
+            # print(runtime)
+            # print(runerror)
+            # print([i[measureIdx[measure]] for i in runerror])
             plt.plot(runtime, [i[measureIdx[measure]] for i in runerror],
                      label=algo,
                      marker=markers[k],
