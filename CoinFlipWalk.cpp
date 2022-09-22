@@ -18,7 +18,6 @@ int main(int argc, char **argv)
     vector<double> epss;
     uint L = 10;
     string filedir, filelabel;
-    double thetad = 1.0;
     int is_update = 0;
     argParser(argc, argv, filedir, filelabel, querynum, epss, L, is_update);
     subsetGraph g(filedir, filelabel);
@@ -78,11 +77,9 @@ int main(int argc, char **argv)
         {
             Random R;
             uint u;
-            double pushrate = 0, randomrate = 0, can_cnt = 0;
             query >> u;
             cout << i << ": " << u << endl;
             clock_t t0 = clock();
-            uint cnt1, cnt2;
             uint levelID = L % 2;
             final_count = 0;
             uint nr = 0.1 * L / eps * 4;
@@ -121,18 +118,13 @@ int main(int argc, char **argv)
                         uint outSize = g.outSizeList[tempNode];
                         double outVertWt = g.outWeightList[tempNode];
                         double incre = tempP / outVertWt;
-
-                        uint pushnum = 0, randomnum = 0;
                         for (auto setIt = g.neighborList[tempNode].begin(); setIt != g.neighborList[tempNode].end(); setIt++)
                         {
                             int setID = setIt->first;
-                            double powans = pow(2, setID);
-                            double increMax = incre * powans;
-                            double pmax = powans / outVertWt; // the maximum sampling probability in this subset;
-                            if (increMax >= thetad)
+                            double increMax = incre * setID;
+                            uint subsetSize = setIt->second.size();
+                            if (increMax >= 1)
                             {
-                                pushnum++;
-                                uint subsetSize = setIt->second.size();
                                 for (uint setidx = 0; setidx < subsetSize; setidx++)
                                 {
                                     node &tmpnode = setIt->second[setidx];
@@ -147,18 +139,16 @@ int main(int argc, char **argv)
                             }
                             else
                             {
-                                randomnum++;
-                                uint subsetSize = setIt->second.size();
-                                boost::binomial_distribution<> bio(subsetSize, increMax / thetad);
+                                boost::binomial_distribution<> bio(subsetSize, increMax);
                                 int rbio = bio(rng);
                                 for (uint j = 0; j < rbio; j++)
                                 {
                                     double r1 = floor(R.drand() * subsetSize);
                                     node tmp = setIt->second[r1];
                                     double r2 = R.drand();
-                                    if (r2 < tmp.w / powans)
+                                    if (r2 < tmp.w / setID)
                                     {
-                                        prob[newLevelID][tmp.id] += thetad;
+                                        prob[newLevelID][tmp.id] += 1;
                                         if (cs_exist[newLevelID][tmp.id] == 0)
                                         {
                                             cs_exist[newLevelID][tmp.id] = 1;
@@ -168,9 +158,6 @@ int main(int argc, char **argv)
                                 }
                             }
                         }
-                        pushrate += pushnum / double(pushnum + randomnum);
-                        randomrate += randomnum / double(pushnum + randomnum);
-                        can_cnt += 1;
                     }
                     tempLevel++;
                 }

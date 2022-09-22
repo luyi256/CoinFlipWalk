@@ -822,7 +822,7 @@ public:
 			// int gap = floor(log2(outWeight / (outSize * outSize))) + 1;
 			for (uint j = 0; j < outSize; j++)
 			{
-				int subset = floor(log2(neighbor[j].w)) + 1;
+				int subset = pow(2,floor(log2(neighbor[j].w)) + 1);
 				// if (subset < gap && smallSetMap[i].find(subset) == smallSetMap[i].end())
 				// {
 				// 	smallSetID *newSmallSet = new smallSetID();
@@ -936,7 +936,7 @@ public:
 		{
 			uint s = sarr[i];
 			uint t = tarr[i];
-			int subset = floor(log2(warr[i])) + 1;
+			int subset = pow(2,floor(log2(warr[i])) + 1);
 			// double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
 			neighborList[s][subset].push_back(node(t, warr[i]));
 			outSizeList[s]++;
