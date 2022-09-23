@@ -50,7 +50,7 @@ public:
 	unordered_map<uint, vector<node>> neighborList;
 	unordered_map<uint, unordered_map<uint, int>> adjList;
 	unordered_map<uint, uint> outSizeList;
-	unordered_map<uint,double> maxWeight;
+	unordered_map<uint, double> maxWeight;
 	Graph() {}
 	Graph(const string &_filedir, const string &_filelabel)
 	{
@@ -230,7 +230,7 @@ public:
 			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
-			double maxw=0;
+			double maxw = 0;
 			for (uint j = 0; j < outSize; j++)
 			{
 				uint id;
@@ -238,12 +238,13 @@ public:
 				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
 				// neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
 				w = 1;
-				if(w>maxw) maxw=w;
+				if (w > maxw)
+					maxw = w;
 				neighborList[i].push_back(node(id, w));
 				adjList[i][id] = j;
 			}
 			outSizeList[i] = outSize;
-			maxWeight[i]=maxw;
+			maxWeight[i] = maxw;
 		}
 		neiNumIn.close();
 		// neiWeightIn.close();
@@ -831,7 +832,7 @@ public:
 			// int gap = floor(log2(outWeight / (outSize * outSize))) + 1;
 			for (uint j = 0; j < outSize; j++)
 			{
-				int subset = pow(2, floor(log2(neighbor[j].w)) + 1);
+				int subset = pow(2, ceil(log2(neighbor[j].w)));
 				// if (subset < gap && smallSetMap[i].find(subset) == smallSetMap[i].end())
 				// {
 				// 	smallSetID *newSmallSet = new smallSetID();
