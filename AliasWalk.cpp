@@ -64,7 +64,7 @@ int main(int argc, char **argv)
                 uint u = nodeId;
                 if (g.outSizeList[u] == 0)
                 {
-                    cout<<"u is isolate"<<endl;
+                    cout << "u is isolate" << endl;
                     return 0;
                 }
                 uint i = 0;

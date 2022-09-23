@@ -36,28 +36,28 @@ int main(int argc, char **argv)
     uint *final_node = new uint[g.n];
     uint *final_exist = new uint[g.n];
     uint final_count = 0;
-    uint *cs_exist[2];
-    cs_exist[0] = new uint[g.n];
-    cs_exist[1] = new uint[g.n];
+    // uint *cs_exist[2];
+    // cs_exist[0] = new uint[g.n];
+    // cs_exist[1] = new uint[g.n];
     //当前层candidate_set的点
-    uint *candidate_set[2];
-    candidate_set[0] = new uint[g.n];
-    candidate_set[1] = new uint[g.n];
-    uint candidate_count[2];
-    candidate_count[0] = 0;
-    candidate_count[1] = 0;
+    // uint *candidate_set[2];
+    // candidate_set[0] = new uint[g.n];
+    // candidate_set[1] = new uint[g.n];
+    // uint candidate_count[2];
+    // candidate_count[0] = 0;
+    // candidate_count[1] = 0;
     //当前层该点的probability
-    double *prob[2];
-    prob[0] = new double[g.n];
-    prob[1] = new double[g.n];
+    // double *prob[2];
+    // prob[0] = new double[g.n];
+    // prob[1] = new double[g.n];
     for (uint i = 0; i < g.n; i++)
     {
-        cs_exist[0][i] = 0;
-        cs_exist[1][i] = 0;
-        candidate_set[0][i] = 0;
-        candidate_set[1][i] = 0;
-        prob[0][i] = 0;
-        prob[1][i] = 0;
+        // cs_exist[0][i] = 0;
+        // cs_exist[1][i] = 0;
+        // candidate_set[0][i] = 0;
+        // candidate_set[1][i] = 0;
+        // prob[0][i] = 0;
+        // prob[1][i] = 0;
         final_p[i] = 0;
         final_node[i] = 0;
         final_exist[i] = 0;
@@ -87,24 +87,21 @@ int main(int argc, char **argv)
             for (uint k = 0; k < nr; k++)
             {
                 uint tempLevel = 0;
-                candidate_set[0][0] = u;
-                candidate_count[0] = 1;
-                candidate_count[1] = 0;
-                prob[0][u] = 1.0;
+                vector<uint> candidate[2];
+                vector<double> prob[2];
+                prob[0].push_back(1.0);
+                candidate[0].push_back(u);
                 while (tempLevel <= L)
                 {
                     uint tempLevelID = tempLevel % 2;
                     uint newLevelID = (tempLevel + 1) % 2;
-                    uint candidateCnt = candidate_count[tempLevelID];
-                    if (candidateCnt == 0)
-                        break;
-                    candidate_count[tempLevelID] = 0;
-                    for (uint j = 0; j < candidateCnt; j++)
+                    int candidate_size = candidate[tempLevelID].size();
+                    for (int c = 0; c < candidate_size; c++)
                     {
-                        uint tempNode = candidate_set[tempLevelID][j];
-                        double tempP = prob[tempLevelID][tempNode];
-                        cs_exist[tempLevelID][tempNode] = 0;
-                        prob[tempLevelID][tempNode] = 0;
+                        uint tempNode = candidate[tempLevelID][c];
+                        double tempP = prob[tempLevelID][c];
+                        if (tempP < 1e-6)
+                            continue;
                         if (tempLevel == L)
                         {
                             if (final_exist[tempNode] == 0)
@@ -127,14 +124,9 @@ int main(int argc, char **argv)
                             {
                                 for (uint setidx = 0; setidx < subsetSize; setidx++)
                                 {
-                                    node &tmpnode = setIt->second[setidx];
-                                    uint newNode = tmpnode.id;
-                                    prob[newLevelID][newNode] += incre * tmpnode.w;
-                                    if (cs_exist[newLevelID][newNode] == 0)
-                                    {
-                                        cs_exist[newLevelID][newNode] = 1;
-                                        candidate_set[newLevelID][candidate_count[newLevelID]++] = newNode;
-                                    }
+                                    const node &tmpnode = setIt->second[setidx];
+                                    prob[newLevelID].push_back(incre * tmpnode.w);
+                                    candidate[newLevelID].push_back(tmpnode.id);
                                 }
                             }
                             else
@@ -144,22 +136,20 @@ int main(int argc, char **argv)
                                 for (uint j = 0; j < rbio; j++)
                                 {
                                     double r1 = floor(R.drand() * subsetSize);
-                                    node tmp = setIt->second[r1];
+                                    const node &tmp = setIt->second[r1];
                                     double r2 = R.drand();
                                     if (r2 < tmp.w / setID)
                                     {
-                                        prob[newLevelID][tmp.id] += 1;
-                                        if (cs_exist[newLevelID][tmp.id] == 0)
-                                        {
-                                            cs_exist[newLevelID][tmp.id] = 1;
-                                            candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
-                                        }
+                                        prob[newLevelID].push_back(1.0);
+                                        candidate[newLevelID].push_back(tmp.id);
                                     }
                                 }
                             }
                         }
                     }
                     tempLevel++;
+                    candidate[tempLevelID].resize(0);
+                    prob[tempLevelID].resize(0);
                 }
             }
 
@@ -195,12 +185,12 @@ int main(int argc, char **argv)
         writecsv << avg_time / (double)querynum << ',';
     }
 
-    delete[] cs_exist[0];
-    delete[] cs_exist[1];
-    delete[] candidate_set[0];
-    delete[] candidate_set[1];
-    delete[] prob[0];
-    delete[] prob[1];
+    // delete[] cs_exist[0];
+    // delete[] cs_exist[1];
+    // delete[] candidate_set[0];
+    // delete[] candidate_set[1];
+    // delete[] prob[0];
+    // delete[] prob[1];
     delete[] final_p;
     delete[] final_node;
     delete[] final_exist;
