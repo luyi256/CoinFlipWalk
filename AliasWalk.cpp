@@ -69,7 +69,10 @@ int main(int argc, char **argv)
             {
                 uint u = nodeId;
                 if (g.outSizeList[u] == 0)
-                    return u;
+                {
+                    cout << "u is isolate." << endl;
+                    return 0;
+                }
                 uint i = 0;
                 while (i++ < L)
                 {
