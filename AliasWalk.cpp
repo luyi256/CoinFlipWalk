@@ -12,7 +12,6 @@ typedef unsigned int uint;
 
 int main(int argc, char **argv)
 {
-    char *endptr;
     long querynum = 10;
     vector<double> epss;
     uint L = 10;
@@ -56,11 +55,6 @@ int main(int argc, char **argv)
             query >> nodeId;
             cout << i << ": " << nodeId << endl;
             clock_t t0 = clock();
-            for (uint j = 0; j < final_count; j++)
-            {
-                final_p[final_node[j]] = 0;
-                final_exist[final_node[j]] = 0;
-            }
             final_count = 0;
             unsigned long long w = 1 / eps / 0.25;
             cout << "w=" << w << endl;
@@ -69,7 +63,10 @@ int main(int argc, char **argv)
             {
                 uint u = nodeId;
                 if (g.outSizeList[u] == 0)
-                    return u;
+                {
+                    cout<<"u is isolate"<<endl;
+                    return 0;
+                }
                 uint i = 0;
                 while (i++ < L)
                 {
@@ -107,6 +104,8 @@ int main(int argc, char **argv)
             for (uint j = 0; j < final_count; j++)
             {
                 fout << final_node[j] << " " << final_p[final_node[j]] << endl;
+                final_p[final_node[j]] = 0;
+                final_exist[final_node[j]] = 0;
             }
             fout.close();
         }
