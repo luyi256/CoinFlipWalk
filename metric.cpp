@@ -297,7 +297,7 @@ metric::metric(string filedir, string filelabel, string algoname, long querynum,
     {
         uint u = query_set[i];
         stringstream ss_gt, ss_gt_dir;
-        ss_gt << "/home/lu_yi/result/powermethod/" << filelabel << "/" << L << "/" << u << "_gt.txt";
+        ss_gt << "./result/powermethod/" << filelabel << "/" << L << "/" << u << "_gt.txt";
         ifstream gtin;
         gtin.open(ss_gt.str());
         // cout << "query " << i << ":" << u << endl;

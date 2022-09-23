@@ -50,6 +50,7 @@ public:
 	unordered_map<uint, vector<node>> neighborList;
 	unordered_map<uint, unordered_map<uint, int>> adjList;
 	unordered_map<uint, uint> outSizeList;
+	unordered_map<uint,double> maxWeight;
 	Graph() {}
 	Graph(const string &_filedir, const string &_filelabel)
 	{
@@ -219,7 +220,7 @@ public:
 		graphAttrIn.close();
 		cout << "Read graph ..." << endl;
 		ifstream neiNumIn(neiNum.c_str(), ios::in | ios::binary);
-		ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
+		// ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
 		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
 		uint outSize;
 		uint outSizeSum = 0, preOutSizeSum = 0;
@@ -229,19 +230,23 @@ public:
 			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
+			double maxw=0;
 			for (uint j = 0; j < outSize; j++)
 			{
 				uint id;
 				double w;
 				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
-				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				// neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				w = 1;
+				if(w>maxw) maxw=w;
 				neighborList[i].push_back(node(id, w));
 				adjList[i][id] = j;
 			}
 			outSizeList[i] = outSize;
+			maxWeight[i]=maxw;
 		}
 		neiNumIn.close();
-		neiWeightIn.close();
+		// neiWeightIn.close();
 		neiNodeIn.close();
 	}
 };
@@ -362,7 +367,7 @@ public:
 		graphAttrIn.close();
 		cout << "Read graph ..." << endl;
 		ifstream neiNumIn(neiNum.c_str(), ios::in | ios::binary);
-		ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
+		// ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
 		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
 		uint outSize;
 		uint outSizeSum = 0, preOutSizeSum = 0;
@@ -379,7 +384,8 @@ public:
 				uint id;
 				double w;
 				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
-				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				// neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				w = 1;
 				neighborList[i].push_back(node(id, w));
 				outWeight += w;
 				prefixsum += neighborList[i][j].w;
@@ -390,7 +396,7 @@ public:
 			outWeightList[i] = outWeight;
 		}
 		neiNumIn.close();
-		neiWeightIn.close();
+		// neiWeightIn.close();
 		neiNodeIn.close();
 	}
 
@@ -517,7 +523,7 @@ public:
 		graphAttrIn.close();
 		cout << "Read graph ..." << endl;
 		ifstream neiNumIn(neiNum.c_str(), ios::in | ios::binary);
-		ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
+		// ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
 		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
 		uint outSize;
 		uint outSizeSum = 0, preOutSizeSum = 0;
@@ -534,7 +540,8 @@ public:
 				uint id;
 				double w;
 				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
-				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				// neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				w = 1;
 				neighborList[i].push_back(node(id, w));
 				outWeight += w;
 				adjList[i][id] = j;
@@ -544,7 +551,7 @@ public:
 			outWeightList[i] = outWeight;
 		}
 		neiNumIn.close();
-		neiWeightIn.close();
+		// neiWeightIn.close();
 		neiNodeIn.close();
 	}
 
@@ -699,7 +706,7 @@ public:
 		cout << "Read graph ..." << endl;
 		//每个节点的出节点下标从哪里开始
 		ifstream neiNumIn(neiNum.c_str(), ios::in | ios::binary);
-		ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
+		// ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
 		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
 		uint outSize;
 		uint outSizeSum = 0, preOutSizeSum = 0;
@@ -716,7 +723,8 @@ public:
 				uint id;
 				double w;
 				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
-				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				// neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				w = 1;
 				neighborList[i].push_back(node(id, w));
 				outWeight += w;
 				pi[j] = make_pair(id, w);
@@ -733,7 +741,7 @@ public:
 			outSizeList[i] = outSize;
 		}
 		neiNumIn.close();
-		neiWeightIn.close();
+		// neiWeightIn.close();
 		neiNodeIn.close();
 	}
 	AliasMethodGraph() {}
@@ -792,7 +800,7 @@ public:
 		graphAttrIn.close();
 		cout << "Read graph ..." << endl;
 		ifstream neiNumIn(neiNum.c_str(), ios::in | ios::binary);
-		ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
+		// ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
 		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
 		uint outSize;
 		uint outSizeSum = 0, preOutSizeSum = 0;
@@ -813,7 +821,8 @@ public:
 				uint id;
 				double w;
 				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
-				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				// neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				w = 1;
 				neighbor.push_back(node(id, w));
 				outWeight += w;
 			}
@@ -822,7 +831,7 @@ public:
 			// int gap = floor(log2(outWeight / (outSize * outSize))) + 1;
 			for (uint j = 0; j < outSize; j++)
 			{
-				int subset = pow(2,floor(log2(neighbor[j].w)) + 1);
+				int subset = pow(2, floor(log2(neighbor[j].w)) + 1);
 				// if (subset < gap && smallSetMap[i].find(subset) == smallSetMap[i].end())
 				// {
 				// 	smallSetID *newSmallSet = new smallSetID();
@@ -837,7 +846,7 @@ public:
 			}
 		}
 		neiNumIn.close();
-		neiWeightIn.close();
+		// neiWeightIn.close();
 		neiNodeIn.close();
 	}
 
@@ -936,7 +945,7 @@ public:
 		{
 			uint s = sarr[i];
 			uint t = tarr[i];
-			int subset = pow(2,floor(log2(warr[i])) + 1);
+			int subset = pow(2, floor(log2(warr[i])) + 1);
 			// double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
 			neighborList[s][subset].push_back(node(t, warr[i]));
 			outSizeList[s]++;

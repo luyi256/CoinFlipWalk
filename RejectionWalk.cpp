@@ -74,12 +74,13 @@ int main(int argc, char **argv)
                 while (i++ < L)
                 {
                     uint outSize = g.outSizeList[u];
-                    double maxw = 0;
-                    for (uint k = 0; k < outSize; k++)
-                    {
-                        if (g.neighborList[u][k].w > maxw)
-                            maxw = g.neighborList[u][k].w;
-                    }
+                    // double maxw = 0;
+                    // for (uint k = 0; k < outSize; k++)
+                    // {
+                    //     if (g.neighborList[u][k].w > maxw)
+                    //         maxw = g.neighborList[u][k].w;
+                    // }
+                    double maxw=g.maxWeight[u];
                     if (outSize == 0)
                         break;
                     while (true)
