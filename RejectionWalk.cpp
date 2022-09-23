@@ -69,7 +69,10 @@ int main(int argc, char **argv)
             {
                 uint u = nodeId;
                 if (g.outSizeList[u] == 0)
-                    return u;
+                {
+                    cout << "u is isolate" << endl;
+                    return 0;
+                }
                 uint i = 0;
                 while (i++ < L)
                 {
@@ -80,16 +83,17 @@ int main(int argc, char **argv)
                     //     if (g.neighborList[u][k].w > maxw)
                     //         maxw = g.neighborList[u][k].w;
                     // }
-                    double maxw=g.maxWeight[u];
                     if (outSize == 0)
                         break;
+                    double maxw = g.maxWeight[u];
                     while (true)
                     {
                         double j = floor(R.drand() * outSize);
                         double r = R.drand();
-                        if (r < g.neighborList[u][j].w / maxw)
+                        auto node = g.neighborList[u][j];
+                        if (r < node.w / maxw)
                         {
-                            u = g.neighborList[u][j].id;
+                            u = node.id;
                             break;
                         }
                     }
