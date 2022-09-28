@@ -28,6 +28,7 @@ struct node
 {
 	uint id;
 	double w;
+	node() {}
 	node(uint _id, double _w) : id(_id), w(_w) {}
 	node(const node &tmp)
 	{
@@ -753,13 +754,22 @@ public:
 class subsetGraph
 {
 public:
+	typedef struct
+	{
+		node *addr;
+		double maxw;
+		int size;
+		int lastIdx;
+	} subsetInfo;
 	uint n;
 	string filedir, filelabel;
-	unordered_map<uint, unordered_map<int, vector<node>>> neighborList;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
-	unordered_map<uint, unordered_map<uint, pair<int, int>>> adjList;
-	// unordered_map<uint, unordered_map<int, smallSetID *>> smallSetMap;
+	unordered_map<uint, unordered_map<uint, pair<node *, int>>> adjList;
+	unordered_map<uint, subsetInfo *> nonEmptySet;
+	unordered_map<uint, int> subsetNum;
+	unordered_map<uint, int *> subsetIdx;
+
 	subsetGraph() {}
 	subsetGraph(const string &_filedir, const string &_filelabel)
 	{
@@ -813,6 +823,8 @@ public:
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
 			vector<node> neighbor;
+			double maxw = 0;
+			unordered_map<int, int> sizeSubset;
 			for (uint j = 0; j < outSize; j++)
 			{
 				uint id;
@@ -821,24 +833,39 @@ public:
 				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
 				neighbor.push_back(node(id, w));
 				outWeight += w;
+				if (maxw < w)
+					maxw = w;
+				if (sizeSubset.find(ceil(log2(w))) == sizeSubset.end())
+					sizeSubset[ceil(log2(w))] = 1;
+				else
+					sizeSubset[ceil(log2(w))]++;
 			}
 			outSizeList[i] = outSize;
 			outWeightList[i] = outWeight;
-			// int gap = floor(log2(outWeight / (outSize * outSize))) + 1;
+			if (maxw == 0)
+			{
+				subsetNum[i] = 0;
+				continue;
+			}
+			int tmpSubsetNum = ceil(log2(maxw)) + 1;
+			nonEmptySet[i] = new subsetInfo[tmpSubsetNum];
+			subsetIdx[i] = new int[tmpSubsetNum];
+			subsetNum[i] = sizeSubset.size();
+			int nonESIdx = 0;
+			for (auto iter = sizeSubset.begin(); iter != sizeSubset.end(); iter++)
+			{
+				int size = iter->second * 2 > 10 ? iter->second * 2 : 10;
+				node *tmpArr = new node[size];
+				subsetIdx[i][iter->first] = nonESIdx;
+				nonEmptySet[i][nonESIdx++] = {tmpArr, pow(2, iter->first), size, 0};
+			}
 			for (uint j = 0; j < outSize; j++)
 			{
-				int subset = pow(2, ceil(log2(neighbor[j].w)));
-				// if (subset < gap && smallSetMap[i].find(subset) == smallSetMap[i].end())
-				// {
-				// 	smallSetID *newSmallSet = new smallSetID();
-				// 	newSmallSet->id = subset;
-				// 	newSmallSet->pre = smallSetHead[i];
-				// 	newSmallSet->next = smallSetHead[i]->next;
-				// 	smallSetHead[i]->next = newSmallSet;
-				// 	smallSetMap[i][subset] = newSmallSet;
-				// }
-				neighborList[i][subset].push_back(neighbor[j]);
-				adjList[i][neighbor[j].id] = make_pair(subset, neighborList[i][subset].size() - 1);
+				int subsetID = ceil(log2(neighbor[j].w));
+				auto &tmpSubsetInfo = nonEmptySet[i][subsetIdx[i][subsetID]];
+				tmpSubsetInfo.addr[tmpSubsetInfo.lastIdx].id = neighbor[j].id;
+				tmpSubsetInfo.addr[tmpSubsetInfo.lastIdx].w = neighbor[j].w;
+				adjList[i][neighbor[j].id] = make_pair(tmpSubsetInfo.addr, tmpSubsetInfo.lastIdx++);
 			}
 		}
 		neiNumIn.close();
@@ -885,75 +912,75 @@ public:
 
 	void update()
 	{
-		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
-		uint sarr[add_num];
-		uint tarr[add_num];
-		double warr[add_num];
-		int opnum = 0;
-		while (opfile >> sarr[opnum] >> tarr[opnum] >> warr[opnum])
-		{
-			opnum++;
-		}
-		opfile.close();
-		// delete
-		auto begin = chrono::high_resolution_clock::now();
-		for (int i = 0; i < add_num; i++)
-		{
-			uint s = sarr[i];
-			uint t = tarr[i];
-			if (adjList[s].find(t) == adjList[s].end())
-			{
-				cout << "delete a nonexistent neighbor" << endl;
-				exit(-2);
-			}
-			int subsetID = adjList[s][t].first;
-			int idx = adjList[s][t].second;
-			uint subsetSize = neighborList[s][subsetID].size();
-			// double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
-			// cout << outSizeList[s] << endl;
-			// cout << outWeightList[s] << endl;
-			if (idx == subsetSize - 1)
-				neighborList[s][subsetID].pop_back();
-			else
-			{
-				int tmpsize = neighborList[s][subsetID].size();
-				auto tmp = neighborList[s][subsetID].end() - 1;
-				neighborList[s][subsetID][idx].id = tmp->id;
-				outWeightList[s] -= neighborList[s][subsetID][idx].w;
-				neighborList[s][subsetID][idx].w = tmp->w;
-				adjList[s][tmp->id].second = idx;
-				neighborList[s][subsetID].pop_back();
-			}
-			adjList[s].erase(t);
-			outSizeList[s]--;
-			// cout << outSizeList[s] << endl;
-			// cout << outWeightList[s] << endl;
-			// double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
-			// if (gap > oldGap && gap > 1)
-			// 	doGap(gap, oldGap, s);
-			// if (gap < oldGap && oldGap > 1)
-			// 	doGap(gap, oldGap, s);
-		}
-		cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
-		// add
-		begin = chrono::high_resolution_clock::now();
-		for (int i = 0; i < add_num; i++)
-		{
-			uint s = sarr[i];
-			uint t = tarr[i];
-			int subset = pow(2, ceil(log2(warr[i])));
-			// double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
-			neighborList[s][subset].push_back(node(t, warr[i]));
-			outSizeList[s]++;
-			outWeightList[s] += warr[i];
-			adjList[s][t] = make_pair(subset, neighborList[s][subset].size() - 1);
-			// double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
-			// if (gap > oldGap && gap > 1)
-			// 	doGap(gap, oldGap, s);
-			// if (gap < oldGap && oldGap > 1)
-			// 	doGap(gap, oldGap, s);
-		}
-		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		// 	ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
+		// 	uint sarr[add_num];
+		// 	uint tarr[add_num];
+		// 	double warr[add_num];
+		// 	int opnum = 0;
+		// 	while (opfile >> sarr[opnum] >> tarr[opnum] >> warr[opnum])
+		// 	{
+		// 		opnum++;
+		// 	}
+		// 	opfile.close();
+		// 	// delete
+		// 	auto begin = chrono::high_resolution_clock::now();
+		// 	for (int i = 0; i < add_num; i++)
+		// 	{
+		// 		uint s = sarr[i];
+		// 		uint t = tarr[i];
+		// 		if (adjList[s].find(t) == adjList[s].end())
+		// 		{
+		// 			cout << "delete a nonexistent neighbor" << endl;
+		// 			exit(-2);
+		// 		}
+		// 		int subsetID = adjList[s][t].first;
+		// 		int idx = adjList[s][t].second;
+		// 		uint subsetSize = neighborList[s][subsetID].size();
+		// 		// double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
+		// 		// cout << outSizeList[s] << endl;
+		// 		// cout << outWeightList[s] << endl;
+		// 		if (idx == subsetSize - 1)
+		// 			neighborList[s][subsetID].pop_back();
+		// 		else
+		// 		{
+		// 			int tmpsize = neighborList[s][subsetID].size();
+		// 			auto tmp = neighborList[s][subsetID].end() - 1;
+		// 			neighborList[s][subsetID][idx].id = tmp->id;
+		// 			outWeightList[s] -= neighborList[s][subsetID][idx].w;
+		// 			neighborList[s][subsetID][idx].w = tmp->w;
+		// 			adjList[s][tmp->id].second = idx;
+		// 			neighborList[s][subsetID].pop_back();
+		// 		}
+		// 		adjList[s].erase(t);
+		// 		outSizeList[s]--;
+		// 		// cout << outSizeList[s] << endl;
+		// 		// cout << outWeightList[s] << endl;
+		// 		// double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
+		// 		// if (gap > oldGap && gap > 1)
+		// 		// 	doGap(gap, oldGap, s);
+		// 		// if (gap < oldGap && oldGap > 1)
+		// 		// 	doGap(gap, oldGap, s);
+		// 	}
+		// 	cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		// 	// add
+		// 	begin = chrono::high_resolution_clock::now();
+		// 	for (int i = 0; i < add_num; i++)
+		// 	{
+		// 		uint s = sarr[i];
+		// 		uint t = tarr[i];
+		// 		int subset = pow(2, ceil(log2(warr[i])));
+		// 		// double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
+		// 		neighborList[s][subset].push_back(node(t, warr[i]));
+		// 		outSizeList[s]++;
+		// 		outWeightList[s] += warr[i];
+		// 		adjList[s][t] = make_pair(subset, neighborList[s][subset].size() - 1);
+		// 		// double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
+		// 		// if (gap > oldGap && gap > 1)
+		// 		// 	doGap(gap, oldGap, s);
+		// 		// if (gap < oldGap && oldGap > 1)
+		// 		// 	doGap(gap, oldGap, s);
+		// 	}
+		// 	cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 };
 

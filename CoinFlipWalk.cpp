@@ -118,16 +118,18 @@ int main(int argc, char **argv)
                         uint outSize = g.outSizeList[tempNode];
                         double outVertWt = g.outWeightList[tempNode];
                         double incre = tempP / outVertWt;
-                        for (auto setIt = g.neighborList[tempNode].begin(); setIt != g.neighborList[tempNode].end(); setIt++)
+                        int tmpSubsetNum = g.subsetNum[tempNode];
+                        for (auto ssIdx = 0; ssIdx < tmpSubsetNum; ssIdx++)
                         {
-                            int setID = setIt->first;
-                            double increMax = incre * setID;
-                            uint subsetSize = setIt->second.size();
+                            auto tmpSubsetInfo = g.nonEmptySet[tempNode][ssIdx];
+                            double maxw = tmpSubsetInfo.maxw;
+                            double increMax = incre * maxw;
+                            uint subsetSize = tmpSubsetInfo.lastIdx;
                             if (increMax >= 1)
                             {
                                 for (uint setidx = 0; setidx < subsetSize; setidx++)
                                 {
-                                    node &tmpnode = setIt->second[setidx];
+                                    const node &tmpnode = tmpSubsetInfo.addr[setidx];
                                     uint newNode = tmpnode.id;
                                     prob[newLevelID][newNode] += incre * tmpnode.w;
                                     if (cs_exist[newLevelID][newNode] == 0)
@@ -141,12 +143,12 @@ int main(int argc, char **argv)
                             {
                                 boost::binomial_distribution<> bio(subsetSize, increMax);
                                 int rbio = bio(rng);
-                                for (uint j = 0; j < rbio; j++)
+                                for (uint cnt = 0; cnt < rbio; cnt++)
                                 {
-                                    double r1 = floor(R.drand() * subsetSize);
-                                    node tmp = setIt->second[r1];
+                                    int r1 = int(floor(R.drand() * subsetSize));
+                                    const node &tmp = tmpSubsetInfo.addr[r1];
                                     double r2 = R.drand();
-                                    if (r2 < tmp.w / setID)
+                                    if (r2 < tmp.w / maxw)
                                     {
                                         prob[newLevelID][tmp.id] += 1;
                                         if (cs_exist[newLevelID][tmp.id] == 0)
