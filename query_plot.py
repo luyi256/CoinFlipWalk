@@ -10,7 +10,7 @@ datasets = [
     "indochina-2004"
 ]
 # "threads-stack-overflow" "colisten-Spotify" "bitcoin-temporal" "indochina-2004" "twitter-2010"
-path = '/home/lu_yi/dynamic-monte-carlo/analysis/'
+path = './analysis/'
 measures = ['conductance', 'maxerr', 'precision']
 #!! 算法是必须跑四个的，不然要牵一发而动全身
 #! 常量设置
@@ -71,6 +71,7 @@ for measure in measures:
         ax.tick_params(axis='both', which='major', labelsize=15)
         plt.ylabel(measure + '-' + datasets_alias[dataset], fontsize=15)
         plt.legend(prop={'size': 10})
+        plt.tight_layout()
         plt.savefig(
             figpath +
             "{}-query-{}_AddErr.jpg".format(measure, datasets_alias[dataset]))

@@ -133,7 +133,6 @@ for measure in plot_measures:
             patch.set_edgecolor(colors[i])
         plt.rcParams['hatch.linewidth'] = 3.0
         plt.tight_layout()
-
         plt.savefig(path +
                     "{}_{}.png".format(measure, datasets_alias[dataset]))
         # plt.savefig(path + "{}_{}.pdf".format(measure, datasets_alias[dataset]))
