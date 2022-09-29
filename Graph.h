@@ -64,10 +64,6 @@ public:
 		graphAttr = filedir + filelabel + ".attribute";
 		cout << "FilePath: " << graphAttr.c_str() << endl;
 		readFile(graphAttr, neiNode, neiWeight, neiNum);
-		ifstream opfile(filedir + "/" + filelabel + ".op");
-		if (!opfile)
-			getAddEdge(add_num);
-		opfile.close();
 	}
 
 	void getQuery(const string &queryname)
@@ -98,6 +94,11 @@ public:
 	void update()
 	{
 		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
+		if (!opfile)
+		{
+			getAddEdge(add_num);
+			opfile.open(filedir + "/" + filelabel + ".op", ios::in);
+		}
 		uint sarr[add_num];
 		uint tarr[add_num];
 		double warr[add_num];
@@ -290,7 +291,6 @@ public:
 	{
 		filedir = _filedir;
 		filelabel = _filelabel;
-		ifstream opfile(filedir + "/" + filelabel + ".op");
 		string neiNode, neiWeight, neiNum, graphAttr;
 		neiNode = filedir + filelabel + ".outEdges";
 		neiWeight = filedir + filelabel + ".outWEdges";
@@ -298,13 +298,16 @@ public:
 		graphAttr = filedir + filelabel + ".attribute";
 		cout << "FilePath: " << graphAttr.c_str() << endl;
 		readFile(graphAttr, neiNode, neiWeight, neiNum);
-		if (!opfile)
-			getAddEdge(10000);
 	}
 
 	void update()
 	{
 		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
+		if (!opfile)
+		{
+			getAddEdge(add_num);
+			opfile.open(filedir + "/" + filelabel + ".op", ios::in);
+		}
 		uint sarr[add_num];
 		uint tarr[add_num];
 		double warr[add_num];
@@ -418,7 +421,6 @@ public:
 	{
 		filedir = _filedir;
 		filelabel = _filelabel;
-		ifstream opfile(filedir + "/" + filelabel + ".op");
 		string neiNode, neiWeight, neiNum, graphAttr;
 		neiNode = filedir + filelabel + ".outEdges";
 		neiWeight = filedir + filelabel + ".outWEdges";
@@ -426,13 +428,16 @@ public:
 		graphAttr = filedir + filelabel + ".attribute";
 		cout << "FilePath: " << graphAttr.c_str() << endl;
 		readFile(graphAttr, neiNode, neiWeight, neiNum);
-		if (!opfile)
-			getAddEdge(10000);
 	}
 
 	void update()
 	{
 		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
+		if (!opfile)
+		{
+			getAddEdge(add_num);
+			opfile.open(filedir + "/" + filelabel + ".op", ios::in);
+		}
 		uint sarr[add_num];
 		uint tarr[add_num];
 		double warr[add_num];
@@ -571,7 +576,6 @@ public:
 	{
 		filedir = _filedir;
 		filelabel = _filelabel;
-		ifstream opfile(filedir + "/" + filelabel + ".op");
 		string neiNode, neiWeight, neiNum, graphAttr;
 		neiNode = filedir + filelabel + ".outEdges";
 		neiWeight = filedir + filelabel + ".outWEdges";
@@ -579,8 +583,6 @@ public:
 		graphAttr = filedir + filelabel + ".attribute";
 		cout << "FilePath: " << graphAttr.c_str() << endl;
 		readFile(graphAttr, neiNode, neiWeight, neiNum);
-		if (!opfile)
-			getAddEdge(10000);
 	}
 
 	// void alias(double *p, uint *h, uint outsize, double sum, const vector<node> &neighbors)
@@ -620,6 +622,11 @@ public:
 	void update()
 	{
 		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
+		if (!opfile)
+		{
+			getAddEdge(add_num);
+			opfile.open(filedir + "/" + filelabel + ".op", ios::in);
+		}
 		uint sarr[add_num];
 		uint tarr[add_num];
 		double warr[add_num];
@@ -765,7 +772,7 @@ public:
 	string filedir, filelabel;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
-	unordered_map<uint, unordered_map<uint, pair<node *, int>>> adjList;
+	unordered_map<uint, unordered_map<uint, pair<int, int>>> adjList;
 	unordered_map<uint, subsetInfo *> nonEmptySet;
 	unordered_map<uint, int> subsetNum;
 	unordered_map<uint, int *> subsetIdx;
@@ -775,7 +782,6 @@ public:
 	{
 		filedir = _filedir;
 		filelabel = _filelabel;
-		ifstream opfile(filedir + "/" + filelabel + ".op");
 		string neiNode, neiWeight, neiNum, graphAttr;
 		neiNode = filedir + filelabel + ".outEdges";
 		neiWeight = filedir + filelabel + ".outWEdges";
@@ -783,8 +789,6 @@ public:
 		graphAttr = filedir + filelabel + ".attribute";
 		cout << "FilePath: " << graphAttr.c_str() << endl;
 		readFile(graphAttr, neiNode, neiWeight, neiNum);
-		if (!opfile)
-			getAddEdge(10000);
 	}
 
 	~subsetGraph()
@@ -865,7 +869,7 @@ public:
 				auto &tmpSubsetInfo = nonEmptySet[i][subsetIdx[i][subsetID]];
 				tmpSubsetInfo.addr[tmpSubsetInfo.lastIdx].id = neighbor[j].id;
 				tmpSubsetInfo.addr[tmpSubsetInfo.lastIdx].w = neighbor[j].w;
-				adjList[i][neighbor[j].id] = make_pair(tmpSubsetInfo.addr, tmpSubsetInfo.lastIdx++);
+				adjList[i][neighbor[j].id] = make_pair(subsetID, tmpSubsetInfo.lastIdx++);
 			}
 		}
 		neiNumIn.close();
@@ -912,75 +916,82 @@ public:
 
 	void update()
 	{
-		// 	ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
-		// 	uint sarr[add_num];
-		// 	uint tarr[add_num];
-		// 	double warr[add_num];
-		// 	int opnum = 0;
-		// 	while (opfile >> sarr[opnum] >> tarr[opnum] >> warr[opnum])
-		// 	{
-		// 		opnum++;
-		// 	}
-		// 	opfile.close();
-		// 	// delete
-		// 	auto begin = chrono::high_resolution_clock::now();
-		// 	for (int i = 0; i < add_num; i++)
-		// 	{
-		// 		uint s = sarr[i];
-		// 		uint t = tarr[i];
-		// 		if (adjList[s].find(t) == adjList[s].end())
-		// 		{
-		// 			cout << "delete a nonexistent neighbor" << endl;
-		// 			exit(-2);
-		// 		}
-		// 		int subsetID = adjList[s][t].first;
-		// 		int idx = adjList[s][t].second;
-		// 		uint subsetSize = neighborList[s][subsetID].size();
-		// 		// double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
-		// 		// cout << outSizeList[s] << endl;
-		// 		// cout << outWeightList[s] << endl;
-		// 		if (idx == subsetSize - 1)
-		// 			neighborList[s][subsetID].pop_back();
-		// 		else
-		// 		{
-		// 			int tmpsize = neighborList[s][subsetID].size();
-		// 			auto tmp = neighborList[s][subsetID].end() - 1;
-		// 			neighborList[s][subsetID][idx].id = tmp->id;
-		// 			outWeightList[s] -= neighborList[s][subsetID][idx].w;
-		// 			neighborList[s][subsetID][idx].w = tmp->w;
-		// 			adjList[s][tmp->id].second = idx;
-		// 			neighborList[s][subsetID].pop_back();
-		// 		}
-		// 		adjList[s].erase(t);
-		// 		outSizeList[s]--;
-		// 		// cout << outSizeList[s] << endl;
-		// 		// cout << outWeightList[s] << endl;
-		// 		// double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
-		// 		// if (gap > oldGap && gap > 1)
-		// 		// 	doGap(gap, oldGap, s);
-		// 		// if (gap < oldGap && oldGap > 1)
-		// 		// 	doGap(gap, oldGap, s);
-		// 	}
-		// 	cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
-		// 	// add
-		// 	begin = chrono::high_resolution_clock::now();
-		// 	for (int i = 0; i < add_num; i++)
-		// 	{
-		// 		uint s = sarr[i];
-		// 		uint t = tarr[i];
-		// 		int subset = pow(2, ceil(log2(warr[i])));
-		// 		// double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
-		// 		neighborList[s][subset].push_back(node(t, warr[i]));
-		// 		outSizeList[s]++;
-		// 		outWeightList[s] += warr[i];
-		// 		adjList[s][t] = make_pair(subset, neighborList[s][subset].size() - 1);
-		// 		// double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
-		// 		// if (gap > oldGap && gap > 1)
-		// 		// 	doGap(gap, oldGap, s);
-		// 		// if (gap < oldGap && oldGap > 1)
-		// 		// 	doGap(gap, oldGap, s);
-		// 	}
-		// 	cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
+		if (!opfile)
+		{
+			getAddEdge(add_num);
+			opfile.open(filedir + "/" + filelabel + ".op", ios::in);
+		}
+		uint sarr[add_num];
+		uint tarr[add_num];
+		double warr[add_num];
+		int opnum = 0;
+		while (opfile >> sarr[opnum] >> tarr[opnum] >> warr[opnum])
+		{
+			opnum++;
+		}
+		opfile.close();
+		// delete
+		auto begin = chrono::high_resolution_clock::now();
+		for (int i = 0; i < add_num; i++)
+		{
+			uint s = sarr[i];
+			uint t = tarr[i];
+			if (adjList[s].find(t) == adjList[s].end())
+			{
+				cout << "delete a nonexistent neighbor" << endl;
+				exit(-2);
+			}
+			int subsetID = adjList[s][t].first;
+			int idx = adjList[s][t].second;
+			auto &tmpSubsetInfo = nonEmptySet[s][subsetIdx[s][subsetID]];
+			int subsetSize = tmpSubsetInfo.lastIdx;
+			outWeightList[s] -= tmpSubsetInfo.addr[idx].w;
+			outSizeList[s]--;
+			tmpSubsetInfo.lastIdx--;
+			if (idx != subsetSize - 1)
+			{
+				auto lastNode = tmpSubsetInfo.addr[subsetSize - 1];
+				tmpSubsetInfo.addr[idx].w = lastNode.w;
+				tmpSubsetInfo.addr[idx].id = lastNode.id;
+				adjList[s][lastNode.id].second = idx;
+			}
+			adjList[s].erase(t);
+			// cout << outSizeList[s] << endl;
+			// cout << outWeightList[s] << endl;
+			// double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
+			// if (gap > oldGap && gap > 1)
+			// 	doGap(gap, oldGap, s);
+			// if (gap < oldGap && oldGap > 1)
+			// 	doGap(gap, oldGap, s);
+		}
+		cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		// add
+		begin = chrono::high_resolution_clock::now();
+		for (int i = 0; i < add_num; i++)
+		{
+			uint s = sarr[i];
+			uint t = tarr[i];
+			int subsetID = ceil(log2(warr[i]));
+			// double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
+			auto &tmpSubsetInfo = nonEmptySet[s][subsetIdx[s][subsetID]];
+			if (tmpSubsetInfo.lastIdx == tmpSubsetInfo.size)
+			{
+				cout << "error, subset overflow" << endl;
+				exit(-1);
+			}
+			tmpSubsetInfo.addr[tmpSubsetInfo.lastIdx].id = t;
+			tmpSubsetInfo.addr[tmpSubsetInfo.lastIdx].w = warr[i];
+			outSizeList[s]++;
+			outWeightList[s] += warr[i];
+			adjList[s][t] = make_pair(subsetID, tmpSubsetInfo.lastIdx++);
+			// double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
+			// if (gap > oldGap && gap > 1)
+			// 	doGap(gap, oldGap, s);
+			// if (gap < oldGap && oldGap > 1)
+			// 	doGap(gap, oldGap, s);
+		}
+		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 };
 
