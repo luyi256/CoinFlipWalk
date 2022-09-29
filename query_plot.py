@@ -5,10 +5,7 @@ from datetime import datetime
 import pytz
 #! args
 # 选择提取哪些数据集，会往本地写数据，文件：'.datalog/[date]_[measurement].data'
-datasets = [
-    "threads-stack-overflow", "colisten-Spotify", "bitcoin-temporal",
-    "indochina-2004"
-]
+datasets = ["threads-stack-overflow","colisten-Spotify","indochina-2004"]
 # "threads-stack-overflow" "colisten-Spotify" "bitcoin-temporal" "indochina-2004" "twitter-2010"
 path = './analysis/'
 measures = ['conductance', 'maxerr', 'precision']
@@ -22,19 +19,33 @@ datasets_alias = {
     "threads-stack-overflow": 'TH',
     "colisten-Spotify": 'CS',
     "indochina-2004": 'IC',
-    "bitcoin-temporal": 'BT'
+    "bitcoin-temporal": 'BT',
+    "coauth-MAG": 'MAG',
+    "coauth-AMiner": 'AM',
+    "tags-stack-overflow": "TAG",
+    "youtube": "YT",
+    "soc-LiveJournal1": "LJ",
+    "orkut-links": 'OL',
+    "block_ethereum": 'ET',
+    "blockchair": 'BC',
+    "clickstream": "CL",
+    "temporal-reddit-reply": 'RR'
 }
 # algos = ['MCAM', 'MCSS', 'MCPS', 'MCAR']
-algos = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
-algo_alias = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
+# algos = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
+# algo_alias = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
+algos = ['CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
+algo_alias = ['CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
 ylabel = {
     'conductance': 'conductance',
     'maxerr': 'MaxAddErr',
     'precision': 'precision@50'
 }
 measureIdx = {'precision': 1, 'conductance': 2, 'maxerr': 3}
-colors = ['#263FA9', '#447B48', '#E85472', '#A686EC']
-markers = ["x", "s", "o", "+"]
+# colors = ['#263FA9', '#447B48', '#E85472', '#A686EC']
+colors = ['#447B48', '#E85472', '#A686EC']
+# markers = ["x", "s", "o", "+"]
+markers = ["s", "o", "+"]
 tz = pytz.timezone('Asia/Shanghai')
 dt = datetime.now(tz).strftime("%m-%d")
 figpath = path + '../result_query/' + dt + '/fig/'
