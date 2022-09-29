@@ -8,20 +8,32 @@ import pytz
 import os
 # args
 # 选择提取哪些数据集，会往本地写数据，文件：'./result_update/[date]_[measurement].data'
-datasets = ["threads-stack-overflow"]
+datasets = ["threads-stack-overflow", "colisten-Spotify", "indochina-2004"]
 # "threads-stack-overflow" "colisten-Spotify" "bitcoin-temporal" "indochina-2004" "twitter-2010"
 log_measures = ['memory', 'memory_overhead', 'time', 'time_overhead']
 plot_measures = ['memory', 'memory_overhead', 'time', 'time_overhead']
 
-algos = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
+algos = ['CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
+algo_alias = ['CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
+# algos = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
 # algos = ['MCAM', 'MCSS', 'MCPS', 'MCAR']
-algo_alias = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
+# algo_alias = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
 datasets_alias = {
     "twitter-2010": 'TW',
     "threads-stack-overflow": 'TH',
     "colisten-Spotify": 'CS',
     "indochina-2004": 'IC',
-    "bitcoin-temporal": 'BT'
+    "bitcoin-temporal": 'BT',
+    "coauth-MAG": 'MAG',
+    "coauth-AMiner": 'AM',
+    "tags-stack-overflow": "TAG",
+    "youtube": "YT",
+    "soc-LiveJournal1": "LJ",
+    "orkut-links": 'OL',
+    "block_ethereum": 'ET',
+    "blockchair": 'BC',
+    "clickstream": "CL",
+    "temporal-reddit-reply": 'RR'
 }
 tz = pytz.timezone('Asia/Shanghai')
 # 避免生成的pdf在苹果系统中无法正确显示线形
@@ -92,7 +104,8 @@ for measure in log_measures:
 num_dataset = len(datasets)
 # colors = [(0, 0.4470, 0.7410), (0.8500, 0.3250, 0.0980),
 #           (0.4940, 0.1840, 0.5560), (0.6353, 0.07843, 0.1843)]
-colors = ['#263FA9', '#447B48', '#E85472', '#A686EC']
+# colors = ['#263FA9', '#447B48', '#E85472', '#A686EC']
+colors = [ '#447B48', '#E85472', '#A686EC']
 # ylims = [50, 500, 40, 6]#8382EB
 #EC7F4B
 #263FA9
