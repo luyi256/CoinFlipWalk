@@ -61,3 +61,4 @@ result_query/
 result_update/
 *perf*
 *.svg
+cos_phi
