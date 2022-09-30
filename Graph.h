@@ -30,12 +30,12 @@ struct node
 	double w;
 	node() {}
 	node(uint _id, double _w) : id(_id), w(_w) {}
-	node(const node &tmp)
+	node(const node& tmp)
 	{
 		id = tmp.id;
 		w = tmp.w;
 	}
-	node &operator=(const node &tmp)
+	node& operator=(const node& tmp)
 	{
 		id = tmp.id;
 		w = tmp.w;
@@ -48,12 +48,12 @@ class Graph
 public:
 	uint n;
 	string filedir, filelabel;
-	unordered_map<uint, vector<node>> neighborList;
-	unordered_map<uint, unordered_map<uint, int>> adjList;
-	unordered_map<uint, uint> outSizeList;
-	unordered_map<uint, double> maxWeight;
+	vector<node>* neighborList;
+	unordered_map<uint, int>* adjList;
+	uint* outSizeList;
+	double* maxWeight;
 	Graph() {}
-	Graph(const string &_filedir, const string &_filelabel)
+	Graph(const string& _filedir, const string& _filelabel)
 	{
 		filedir = _filedir;
 		filelabel = _filelabel;
@@ -66,10 +66,10 @@ public:
 		readFile(graphAttr, neiNode, neiWeight, neiNum);
 	}
 
-	void getQuery(const string &queryname)
+	void getQuery(const string& queryname)
 	{
 		cout << "Generate query file..." << endl;
-		pair<int, double> *aliasD = new pair<int, double>[n];
+		pair<int, double>* aliasD = new pair<int, double>[n];
 		for (uint i = 0; i < n; i++)
 		{
 			double outweight = 0.0;
@@ -139,7 +139,7 @@ public:
 		begin = chrono::high_resolution_clock::now();
 		for (int i = 0; i < add_num; i++)
 		{
-			neighborList[sarr[i]].push_back(node{tarr[i], warr[i]});
+			neighborList[sarr[i]].push_back(node{ tarr[i], warr[i] });
 			outSizeList[sarr[i]]++;
 			adjList[sarr[i]][tarr[i]] = neighborList[sarr[i]].size() - 1;
 		}
@@ -152,7 +152,7 @@ public:
 
 	void getAddEdge(long num)
 	{
-		pair<int, double> *aliasD = new pair<int, double>[n];
+		pair<int, double>* aliasD = new pair<int, double>[n];
 		unordered_map<uint, vector<uint>> hasAdded;
 		for (uint i = 0; i < n; i++)
 		{
@@ -191,28 +191,9 @@ public:
 		}
 		delete[] aliasD;
 		output.close();
-		// ofstream outedges(filedir + filelabel + ".initoutEdges_distr", ios::out | ios::binary);
-		// ofstream outwedges(filedir + filelabel + ".initoutWEdges_distr", ios::out | ios::binary);
-		// ofstream outptr(filedir + filelabel + ".initoutPtr_distr", ios::out | ios::binary);
-
-		// uint preSum = 0;
-		// for (uint i = 0; i < n; i++)
-		// {
-		// 	for (vector<node>::iterator it = neighborList[i].begin(); it != neighborList[i].end(); ++it)
-		// 	{
-		// 		outedges.write(reinterpret_cast<char *>(&(it->id)), sizeof(uint));
-		// 		outwedges.write(reinterpret_cast<char *>(&(it->w)), sizeof(double));
-		// 	}
-		// 	outptr.write(reinterpret_cast<char *>(&(preSum)), sizeof(uint));
-		// 	preSum += outSizeList[i];
-		// }
-		// outptr.write(reinterpret_cast<char *>(&(preSum)), sizeof(uint));
-		// outedges.close();
-		// outwedges.close();
-		// outptr.close();
 	}
 
-	void readFile(const string &graphAttr, const string &neiNode, const string &neiWeight, const string &neiNum)
+	void readFile(const string& graphAttr, const string& neiNode, const string& neiWeight, const string& neiNum)
 	{
 		cout << "Read graph attributes..." << endl;
 		string tmp;
@@ -226,10 +207,14 @@ public:
 		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
 		uint outSize;
 		uint outSizeSum = 0, preOutSizeSum = 0;
-		neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+		neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
+		neighborList = new vector<node>[n];
+		adjList = new unordered_map<uint, int>[n];
+		outSizeList = new uint[n];
+		maxWeight = new double[n];
 		for (uint i = 0; i < n; i++)
 		{
-			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
 			double maxw = 0;
@@ -237,8 +222,8 @@ public:
 			{
 				uint id;
 				double w;
-				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
-				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
+				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
 				if (w > maxw)
 					maxw = w;
 				neighborList[i].push_back(node(id, w));
@@ -287,7 +272,7 @@ public:
 	unordered_map<uint, unordered_map<uint, int>> adjList;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
-	BSTPrefixSumGraph(const string &_filedir, const string &_filelabel)
+	BSTPrefixSumGraph(const string& _filedir, const string& _filelabel)
 	{
 		filedir = _filedir;
 		filelabel = _filelabel;
@@ -346,7 +331,7 @@ public:
 		auto begin = chrono::high_resolution_clock::now();
 		for (int i = 0; i < add_num; i++)
 		{
-			neighborList[sarr[i]].push_back(node{tarr[i], warr[i]});
+			neighborList[sarr[i]].push_back(node{ tarr[i], warr[i] });
 			outSizeList[sarr[i]]++;
 			outWeightList[sarr[i]] += warr[i];
 			BSTList[sarr[i]].insert(outWeightList[sarr[i]]);
@@ -361,7 +346,7 @@ public:
 		exit(-1);
 	}
 
-	void readFile(const string &graphAttr, const string &neiNode, const string &neiWeight, const string &neiNum)
+	void readFile(const string& graphAttr, const string& neiNode, const string& neiWeight, const string& neiNum)
 	{
 		cout << "Read graph attributes..." << endl;
 		string tmp;
@@ -375,11 +360,11 @@ public:
 		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
 		uint outSize;
 		uint outSizeSum = 0, preOutSizeSum = 0;
-		neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+		neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
 		for (uint i = 0; i < n; i++)
 		{
 			double outWeight = 0;
-			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
 			double prefixsum = 0;
@@ -387,8 +372,8 @@ public:
 			{
 				uint id;
 				double w;
-				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
-				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
+				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
 				neighborList[i].push_back(node(id, w));
 				outWeight += w;
 				prefixsum += neighborList[i][j].w;
@@ -410,14 +395,14 @@ public:
 class AVLPrefixSumGraph
 {
 public:
-	unordered_map<uint, AVLnode *> AVLList;
+	AVLnode** AVLList;
 	uint n;
 	string filedir, filelabel;
-	unordered_map<uint, vector<node>> neighborList;
-	unordered_map<uint, unordered_map<uint, int>> adjList;
-	unordered_map<uint, uint> outSizeList;
-	unordered_map<uint, double> outWeightList;
-	AVLPrefixSumGraph(const string &_filedir, const string &_filelabel)
+	vector<node>* neighborList;
+	unordered_map<uint, int>* adjList;
+	uint* outSizeList;
+	double* outWeightList;
+	AVLPrefixSumGraph(const string& _filedir, const string& _filelabel)
 	{
 		filedir = _filedir;
 		filelabel = _filelabel;
@@ -498,7 +483,7 @@ public:
 			uint s = sarr[i];
 			uint t = tarr[i];
 			double w = warr[i];
-			neighborList[s].push_back(node{t, w});
+			neighborList[s].push_back(node{ t, w });
 			outSizeList[s]++;
 			outWeightList[s] += w;
 			AVLList[s] = addNode(AVLList[s], outSizeList[s] - 1, new AVLnode(warr[i]));
@@ -518,7 +503,7 @@ public:
 		exit(-1);
 	}
 
-	void readFile(const string &graphAttr, const string &neiNode, const string &neiWeight, const string &neiNum)
+	void readFile(const string& graphAttr, const string& neiNode, const string& neiWeight, const string& neiNum)
 	{
 		cout << "Read graph attributes..." << endl;
 		string tmp;
@@ -532,11 +517,16 @@ public:
 		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
 		uint outSize;
 		uint outSizeSum = 0, preOutSizeSum = 0;
-		neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+		neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
+		neighborList = new vector<node>[n];
+		AVLList = new AVLnode * [n];
+		adjList = new unordered_map<uint, int>[n];
+		outSizeList = new uint[n];
+		outWeightList = new double[n];
 		for (uint i = 0; i < n; i++)
 		{
 			double outWeight = 0;
-			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
 			AVLList[i] = NULL;
@@ -544,8 +534,8 @@ public:
 			{
 				uint id;
 				double w;
-				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
-				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
+				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
 				neighborList[i].push_back(node(id, w));
 				outWeight += w;
 				adjList[i][id] = j;
@@ -558,7 +548,6 @@ public:
 		neiWeightIn.close();
 		neiNodeIn.close();
 	}
-
 	AVLPrefixSumGraph() {}
 	~AVLPrefixSumGraph() {}
 };
@@ -572,7 +561,7 @@ public:
 	unordered_map<uint, vector<node>> neighborList;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, unordered_map<uint, int>> adjList;
-	AliasMethodGraph(const string &_filedir, const string &_filelabel)
+	AliasMethodGraph(const string& _filedir, const string& _filelabel)
 	{
 		filedir = _filedir;
 		filelabel = _filelabel;
@@ -664,7 +653,7 @@ public:
 			adjList[s].erase(t);
 			outSizeList[s]--;
 			uint outSize = outSizeList[s];
-			pair<int, double> *pi = new pair<int, double>[outSize];
+			pair<int, double>* pi = new pair<int, double>[outSize];
 			for (uint j = 0; j < outSize; j++)
 			{
 				pi[j] = make_pair(neighborList[s][j].id, neighborList[s][j].w);
@@ -679,12 +668,12 @@ public:
 		{
 			uint s = sarr[i];
 			uint t = tarr[i];
-			neighborList[s].push_back(node{tarr[i], warr[i]});
+			neighborList[s].push_back(node{ tarr[i], warr[i] });
 			outSizeList[s]++;
 			uint outSize = outSizeList[s];
 			// delete[] aliasList[s].first;
 			// delete[] aliasList[s].second;
-			pair<int, double> *pi = new pair<int, double>[outSize];
+			pair<int, double>* pi = new pair<int, double>[outSize];
 			for (uint j = 0; j < outSize; j++)
 			{
 				pi[j] = make_pair(neighborList[s][j].id, neighborList[s][j].w);
@@ -701,7 +690,7 @@ public:
 		exit(-1);
 	}
 
-	void readFile(const string &graphAttr, const string &neiNode, const string &neiWeight, const string &neiNum)
+	void readFile(const string& graphAttr, const string& neiNode, const string& neiWeight, const string& neiNum)
 	{
 		cout << "Read graph attributes..." << endl;
 		string tmp;
@@ -716,20 +705,20 @@ public:
 		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
 		uint outSize;
 		uint outSizeSum = 0, preOutSizeSum = 0;
-		neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+		neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
 		for (uint i = 0; i < n; i++)
 		{
 			double outWeight = 0;
-			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
-			pair<int, double> *pi = new pair<int, double>[outSize];
+			pair<int, double>* pi = new pair<int, double>[outSize];
 			for (uint j = 0; j < outSize; j++)
 			{
 				uint id;
 				double w;
-				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
-				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
+				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
 				neighborList[i].push_back(node(id, w));
 				outWeight += w;
 				pi[j] = make_pair(id, w);
@@ -763,22 +752,21 @@ class subsetGraph
 public:
 	typedef struct
 	{
-		node *addr;
+		node* addr;
 		double maxw;
 		int size;
 		int lastIdx;
 	} subsetInfo;
 	uint n;
 	string filedir, filelabel;
-	unordered_map<uint, uint> outSizeList;
-	unordered_map<uint, double> outWeightList;
-	unordered_map<uint, unordered_map<uint, pair<int, int>>> adjList;
-	unordered_map<uint, subsetInfo *> nonEmptySet;
-	unordered_map<uint, int> subsetNum;
-	unordered_map<uint, int *> subsetIdx;
+	double* outWeightList;
+	unordered_map<uint, pair<int, int>>* adjList;
+	subsetInfo** nonEmptySet;
+	int* subsetNum;
+	int** subsetIdx;
 
 	subsetGraph() {}
-	subsetGraph(const string &_filedir, const string &_filelabel)
+	subsetGraph(const string& _filedir, const string& _filelabel)
 	{
 		filedir = _filedir;
 		filelabel = _filelabel;
@@ -801,7 +789,7 @@ public:
 		exit(-1);
 	}
 
-	void readFile(const string &graphAttr, const string &neiNode, const string &neiWeight, const string &neiNum)
+	void readFile(const string& graphAttr, const string& neiNode, const string& neiWeight, const string& neiNum)
 	{
 		cout << "Read graph attributes..." << endl;
 		string tmp;
@@ -815,15 +803,16 @@ public:
 		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
 		uint outSize;
 		uint outSizeSum = 0, preOutSizeSum = 0;
-		neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+		neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
+		outWeightList = new double[n];
+		nonEmptySet = new subsetInfo * [n];
+		subsetNum = new int[n];
+		subsetIdx = new int* [n];
+		adjList = new unordered_map<uint, pair<int, int>>[n];
 		for (uint i = 0; i < n; i++)
 		{
-			// smallSetHead[i] = new smallSetID();
-			// smallSetHead[i]->next = NULL;
-			// smallSetHead[i]->pre = NULL;
-			// smallSetHead[i]->id = -1;
 			double outWeight = 0;
-			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
 			vector<node> neighbor;
@@ -833,8 +822,8 @@ public:
 			{
 				uint id;
 				double w;
-				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
-				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
+				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
 				neighbor.push_back(node(id, w));
 				outWeight += w;
 				if (maxw < w)
@@ -844,7 +833,6 @@ public:
 				else
 					sizeSubset[ceil(log2(w))]++;
 			}
-			outSizeList[i] = outSize;
 			outWeightList[i] = outWeight;
 			if (maxw == 0)
 			{
@@ -859,14 +847,14 @@ public:
 			for (auto iter = sizeSubset.begin(); iter != sizeSubset.end(); iter++)
 			{
 				int size = iter->second * 2 > 10 ? iter->second * 2 : 10;
-				node *tmpArr = new node[size];
+				node* tmpArr = new node[size];
 				subsetIdx[i][iter->first] = nonESIdx;
-				nonEmptySet[i][nonESIdx++] = {tmpArr, pow(2, iter->first), size, 0};
+				nonEmptySet[i][nonESIdx++] = { tmpArr, pow(2, iter->first), size, 0 };
 			}
 			for (uint j = 0; j < outSize; j++)
 			{
 				int subsetID = ceil(log2(neighbor[j].w));
-				auto &tmpSubsetInfo = nonEmptySet[i][subsetIdx[i][subsetID]];
+				auto& tmpSubsetInfo = nonEmptySet[i][subsetIdx[i][subsetID]];
 				tmpSubsetInfo.addr[tmpSubsetInfo.lastIdx].id = neighbor[j].id;
 				tmpSubsetInfo.addr[tmpSubsetInfo.lastIdx].w = neighbor[j].w;
 				adjList[i][neighbor[j].id] = make_pair(subsetID, tmpSubsetInfo.lastIdx++);
@@ -876,43 +864,6 @@ public:
 		neiWeightIn.close();
 		neiNodeIn.close();
 	}
-
-	// void doGap(int gap, int oldGap, uint s)
-	// {
-	// 	if (gap == oldGap)
-	// 		return;
-	// 	if (gap > oldGap)
-	// 	{
-	// 		if (oldGap < 1)
-	// 			oldGap = 1;
-	// 		while (oldGap < gap)
-	// 		{
-	// 			smallSetID *newSmallSet = new smallSetID();
-	// 			newSmallSet->id = oldGap;
-	// 			newSmallSet->pre = smallSetHead[s];
-	// 			newSmallSet->next = smallSetHead[s]->next;
-	// 			smallSetHead[s]->next = newSmallSet;
-	// 			smallSetMap[s][oldGap] = newSmallSet;
-	// 			oldGap++;
-	// 		}
-	// 	}
-	// 	else
-	// 	{
-	// 		oldGap--;
-	// 		while (oldGap >= gap && oldGap >= 1)
-	// 		{
-	// 			smallSetID *oldSmallSet = smallSetMap[s][oldGap];
-	// 			if (oldSmallSet->pre != NULL)
-	// 				oldSmallSet->pre->next = oldSmallSet->next;
-	// 			if (oldSmallSet->next != NULL)
-	// 				oldSmallSet->next->pre = oldSmallSet->pre;
-	// 			delete oldSmallSet;
-	// 			smallSetMap[s].erase(oldGap);
-	// 			oldGap--;
-	// 		}
-	// 	}
-	// 	return;
-	// }
 
 	void update()
 	{
@@ -944,10 +895,9 @@ public:
 			}
 			int subsetID = adjList[s][t].first;
 			int idx = adjList[s][t].second;
-			auto &tmpSubsetInfo = nonEmptySet[s][subsetIdx[s][subsetID]];
+			auto& tmpSubsetInfo = nonEmptySet[s][subsetIdx[s][subsetID]];
 			int subsetSize = tmpSubsetInfo.lastIdx;
 			outWeightList[s] -= tmpSubsetInfo.addr[idx].w;
-			outSizeList[s]--;
 			tmpSubsetInfo.lastIdx--;
 			if (idx != subsetSize - 1)
 			{
@@ -957,13 +907,6 @@ public:
 				adjList[s][lastNode.id].second = idx;
 			}
 			adjList[s].erase(t);
-			// cout << outSizeList[s] << endl;
-			// cout << outWeightList[s] << endl;
-			// double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
-			// if (gap > oldGap && gap > 1)
-			// 	doGap(gap, oldGap, s);
-			// if (gap < oldGap && oldGap > 1)
-			// 	doGap(gap, oldGap, s);
 		}
 		cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 		// add
@@ -973,8 +916,7 @@ public:
 			uint s = sarr[i];
 			uint t = tarr[i];
 			int subsetID = ceil(log2(warr[i]));
-			// double oldGap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
-			auto &tmpSubsetInfo = nonEmptySet[s][subsetIdx[s][subsetID]];
+			auto& tmpSubsetInfo = nonEmptySet[s][subsetIdx[s][subsetID]];
 			if (tmpSubsetInfo.lastIdx == tmpSubsetInfo.size)
 			{
 				cout << "error, subset overflow" << endl;
@@ -982,14 +924,8 @@ public:
 			}
 			tmpSubsetInfo.addr[tmpSubsetInfo.lastIdx].id = t;
 			tmpSubsetInfo.addr[tmpSubsetInfo.lastIdx].w = warr[i];
-			outSizeList[s]++;
 			outWeightList[s] += warr[i];
 			adjList[s][t] = make_pair(subsetID, tmpSubsetInfo.lastIdx++);
-			// double gap = floor(log2(outWeightList[s] / (outSizeList[s] * outSizeList[s]))) + 1;
-			// if (gap > oldGap && gap > 1)
-			// 	doGap(gap, oldGap, s);
-			// if (gap < oldGap && oldGap > 1)
-			// 	doGap(gap, oldGap, s);
 		}
 		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
@@ -1004,7 +940,7 @@ public:
 	unordered_map<uint, vector<node>> neighborList;
 	unordered_map<uint, uint> outSizeList;
 	unordered_map<uint, double> outWeightList;
-	BITPrefixSumGraph(const string &_filedir, const string &_filelabel)
+	BITPrefixSumGraph(const string& _filedir, const string& _filelabel)
 	{
 		filedir = _filedir;
 		filelabel = _filelabel;
@@ -1052,7 +988,7 @@ public:
 		auto begin = chrono::high_resolution_clock::now();
 		for (int i = 0; i < add_num; i++)
 		{
-			neighborList[sarr[i]].push_back(node{tarr[i], warr[i]});
+			neighborList[sarr[i]].push_back(node{ tarr[i], warr[i] });
 			outSizeList[sarr[i]]++;
 			outWeightList[sarr[i]] += warr[i];
 			BITList[sarr[i]].add(warr[i]);
@@ -1060,7 +996,7 @@ public:
 		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 
-	void readFile(const string &graphAttr, const string &neiNode, const string &neiWeight, const string &neiNum)
+	void readFile(const string& graphAttr, const string& neiNode, const string& neiWeight, const string& neiNum)
 	{
 		cout << "Read graph attributes..." << endl;
 		string tmp;
@@ -1075,21 +1011,21 @@ public:
 		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
 		uint outSize;
 		uint outSizeSum = 0, preOutSizeSum = 0;
-		neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+		neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
 		for (uint i = 0; i < n; i++)
 		{
 			double outWeight = 0;
-			neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
-			double *arr = new double[outSize];
+			double* arr = new double[outSize];
 
 			for (uint j = 0; j < outSize; j++)
 			{
 				uint id;
 				double w;
-				neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
-				neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
+				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
 				neighborList[i].push_back(node(id, w));
 				outWeight += w;
 				arr[j] = neighborList[i][j].w;

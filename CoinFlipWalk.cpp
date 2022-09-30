@@ -12,7 +12,7 @@
 using namespace std;
 typedef unsigned int uint;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     long querynum = 10;
     vector<double> epss;
@@ -32,22 +32,22 @@ int main(int argc, char **argv)
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
     cout << "Input query file from: " << queryname << endl;
-    double *final_p = new double[g.n];
-    uint *final_node = new uint[g.n];
-    uint *final_exist = new uint[g.n];
+    double* final_p = new double[g.n];
+    uint* final_node = new uint[g.n];
+    uint* final_exist = new uint[g.n];
     uint final_count = 0;
-    uint *cs_exist[2];
+    uint* cs_exist[2];
     cs_exist[0] = new uint[g.n];
     cs_exist[1] = new uint[g.n];
     //当前层candidate_set的点
-    uint *candidate_set[2];
+    uint* candidate_set[2];
     candidate_set[0] = new uint[g.n];
     candidate_set[1] = new uint[g.n];
     uint candidate_count[2];
     candidate_count[0] = 0;
     candidate_count[1] = 0;
     //当前层该点的probability
-    double *prob[2];
+    double* prob[2];
     prob[0] = new double[g.n];
     prob[1] = new double[g.n];
     for (uint i = 0; i < g.n; i++)
@@ -115,7 +115,6 @@ int main(int argc, char **argv)
                             final_p[tempNode] += tempP / (double)nr;
                             continue;
                         }
-                        uint outSize = g.outSizeList[tempNode];
                         double outVertWt = g.outWeightList[tempNode];
                         double incre = tempP / outVertWt;
                         int tmpSubsetNum = g.subsetNum[tempNode];
@@ -129,7 +128,7 @@ int main(int argc, char **argv)
                             {
                                 for (uint setidx = 0; setidx < subsetSize; setidx++)
                                 {
-                                    const node &tmpnode = tmpSubsetInfo.addr[setidx];
+                                    const node& tmpnode = tmpSubsetInfo.addr[setidx];
                                     uint newNode = tmpnode.id;
                                     prob[newLevelID][newNode] += incre * tmpnode.w;
                                     if (cs_exist[newLevelID][newNode] == 0)
@@ -146,7 +145,7 @@ int main(int argc, char **argv)
                                 for (uint cnt = 0; cnt < rbio; cnt++)
                                 {
                                     int r1 = int(floor(R.drand() * subsetSize));
-                                    const node &tmp = tmpSubsetInfo.addr[r1];
+                                    const node& tmp = tmpSubsetInfo.addr[r1];
                                     double r2 = R.drand();
                                     if (r2 < tmp.w / maxw)
                                     {
@@ -192,8 +191,8 @@ int main(int argc, char **argv)
         cout << endl;
         cout << "query time: " << avg_time / (double)querynum << " s" << endl;
         cout << "==== "
-             << "CoinFlipWalk"
-             << " with " << eps << " on " << filelabel << " done!====" << endl;
+            << "CoinFlipWalk"
+            << " with " << eps << " on " << filelabel << " done!====" << endl;
         writecsv << avg_time / (double)querynum << ',';
     }
 
@@ -207,8 +206,8 @@ int main(int argc, char **argv)
     delete[] final_node;
     delete[] final_exist;
     cout << endl
-         << endl
-         << endl;
+        << endl
+        << endl;
 
     writecsv.close();
 }
