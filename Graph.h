@@ -20,10 +20,12 @@
 #include "rbtree.h"
 #include "utils.h"
 #include <chrono>
+#include<stdio.h>
 using namespace std;
 
 typedef unsigned int uint;
 const int add_num = 100000;
+const int most_bit = 31;
 struct node
 {
 	uint id;
@@ -762,8 +764,7 @@ public:
 	double* outWeightList;
 	unordered_map<uint, pair<int, int>>* adjList;
 	subsetInfo** nonEmptySet;
-	int* subsetNum;
-	int** subsetIdx;
+	uint* bitmap;
 
 	subsetGraph() {}
 	subsetGraph(const string& _filedir, const string& _filelabel)
@@ -806,8 +807,8 @@ public:
 		neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
 		outWeightList = new double[n];
 		nonEmptySet = new subsetInfo * [n];
-		subsetNum = new int[n];
-		subsetIdx = new int* [n];
+		bitmap = new uint[n];
+
 		adjList = new unordered_map<uint, pair<int, int>>[n];
 		for (uint i = 0; i < n; i++)
 		{
@@ -834,27 +835,21 @@ public:
 					sizeSubset[ceil(log2(w))]++;
 			}
 			outWeightList[i] = outWeight;
-			if (maxw == 0)
-			{
-				subsetNum[i] = 0;
-				continue;
-			}
-			int tmpSubsetNum = ceil(log2(maxw)) + 1;
-			nonEmptySet[i] = new subsetInfo[tmpSubsetNum];
-			subsetIdx[i] = new int[tmpSubsetNum];
-			subsetNum[i] = sizeSubset.size();
+			bitmap[i] = 0;
+			if (maxw == 0)continue;
+			nonEmptySet[i] = new subsetInfo[most_bit + 1];
 			int nonESIdx = 0;
 			for (auto iter = sizeSubset.begin(); iter != sizeSubset.end(); iter++)
 			{
 				int size = iter->second * 2 > 10 ? iter->second * 2 : 10;
 				node* tmpArr = new node[size];
-				subsetIdx[i][iter->first] = nonESIdx;
-				nonEmptySet[i][nonESIdx++] = { tmpArr, pow(2, iter->first), size, 0 };
+				bitmap[i] += 1 << iter->first;
+				nonEmptySet[i][iter->first] = { tmpArr, pow(2, iter->first), size, 0 };
 			}
 			for (uint j = 0; j < outSize; j++)
 			{
 				int subsetID = ceil(log2(neighbor[j].w));
-				auto& tmpSubsetInfo = nonEmptySet[i][subsetIdx[i][subsetID]];
+				auto& tmpSubsetInfo = nonEmptySet[i][subsetID];
 				tmpSubsetInfo.addr[tmpSubsetInfo.lastIdx].id = neighbor[j].id;
 				tmpSubsetInfo.addr[tmpSubsetInfo.lastIdx].w = neighbor[j].w;
 				adjList[i][neighbor[j].id] = make_pair(subsetID, tmpSubsetInfo.lastIdx++);
@@ -895,7 +890,7 @@ public:
 			}
 			int subsetID = adjList[s][t].first;
 			int idx = adjList[s][t].second;
-			auto& tmpSubsetInfo = nonEmptySet[s][subsetIdx[s][subsetID]];
+			auto& tmpSubsetInfo = nonEmptySet[s][subsetID];
 			int subsetSize = tmpSubsetInfo.lastIdx;
 			outWeightList[s] -= tmpSubsetInfo.addr[idx].w;
 			tmpSubsetInfo.lastIdx--;
@@ -916,7 +911,7 @@ public:
 			uint s = sarr[i];
 			uint t = tarr[i];
 			int subsetID = ceil(log2(warr[i]));
-			auto& tmpSubsetInfo = nonEmptySet[s][subsetIdx[s][subsetID]];
+			auto& tmpSubsetInfo = nonEmptySet[s][subsetID];
 			if (tmpSubsetInfo.lastIdx == tmpSubsetInfo.size)
 			{
 				cout << "error, subset overflow" << endl;
