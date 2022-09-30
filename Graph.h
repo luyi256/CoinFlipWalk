@@ -214,6 +214,8 @@ public:
 		adjList = new unordered_map<uint, int>[n];
 		outSizeList = new uint[n];
 		maxWeight = new double[n];
+		int processWei = 0;
+		if (neiNode.find("affinity") > 0) processWei = 1;
 		for (uint i = 0; i < n; i++)
 		{
 			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
@@ -226,6 +228,7 @@ public:
 				double w;
 				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
 				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
+				if (processWei) w = w * 100000 > 1 ? w * 100000 : 1;
 				if (w > maxw)
 					maxw = w;
 				neighborList[i].push_back(node(id, w));
@@ -525,6 +528,8 @@ public:
 		adjList = new unordered_map<uint, int>[n];
 		outSizeList = new uint[n];
 		outWeightList = new double[n];
+		int processWei = 0;
+		if (neiNode.find("affinity") > 0) processWei = 1;
 		for (uint i = 0; i < n; i++)
 		{
 			double outWeight = 0;
@@ -538,6 +543,7 @@ public:
 				double w;
 				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
 				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
+				if (processWei) w = w * 100000 > 1 ? w * 100000 : 1;
 				neighborList[i].push_back(node(id, w));
 				outWeight += w;
 				adjList[i][id] = j;
@@ -708,6 +714,8 @@ public:
 		uint outSize;
 		uint outSizeSum = 0, preOutSizeSum = 0;
 		neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
+		int processWei = 0;
+		if (neiNode.find("affinity") > 0) processWei = 1;
 		for (uint i = 0; i < n; i++)
 		{
 			double outWeight = 0;
@@ -721,6 +729,7 @@ public:
 				double w;
 				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
 				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
+				if (processWei) w = w * 100000 > 1 ? w * 100000 : 1;
 				neighborList[i].push_back(node(id, w));
 				outWeight += w;
 				pi[j] = make_pair(id, w);
@@ -808,8 +817,9 @@ public:
 		outWeightList = new double[n];
 		nonEmptySet = new subsetInfo * [n];
 		bitmap = new uint[n];
-
 		adjList = new unordered_map<uint, pair<int, int>>[n];
+		int processWei = 0;
+		if (neiNode.find("affinity") != string::npos) processWei = 1;
 		for (uint i = 0; i < n; i++)
 		{
 			double outWeight = 0;
@@ -825,6 +835,7 @@ public:
 				double w;
 				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
 				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
+				if (processWei) w = w * 100000 > 1 ? w * 100000 : 1;
 				neighbor.push_back(node(id, w));
 				outWeight += w;
 				if (maxw < w)
