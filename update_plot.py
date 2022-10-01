@@ -8,7 +8,7 @@ import pytz
 import os
 # args
 # 选择提取哪些数据集，会往本地写数据，文件：'./result_update/[date]_[measurement].data'
-datasets = ["threads-stack-overflow", "colisten-Spotify", "indochina-2004"]
+datasets = ["twitter-2010"]
 # "threads-stack-overflow" "colisten-Spotify" "bitcoin-temporal" "indochina-2004" "twitter-2010"
 log_measures = ['memory', 'memory_overhead', 'time', 'time_overhead']
 plot_measures = ['memory', 'memory_overhead', 'time', 'time_overhead']
@@ -45,7 +45,8 @@ to_sub = 0
 for i, algo in enumerate(algos):
     if algo == 'MCAR' or algo == 'RejectionWalk':
         to_sub = i
-
+        break
+print("Rejection at",to_sub)
 time = []
 memory = []
 for dataset in datasets:
