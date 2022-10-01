@@ -144,9 +144,9 @@ int main(int argc, char** argv)
                             {
                                 boost::binomial_distribution<> bio(subsetSize, increMax);
                                 int rbio = bio(rng);
-                                while (rbio--) {
-                                    int r1 = int(floor(R.drand() * subsetSize));
-                                    const node& tmp = tmpSubsetInfo.addr[r1];
+                                for (int cnt = 0;cnt < rbio;cnt++) {
+                                    int r1 = int(floor(R.drand() * (subsetSize - cnt))) + cnt;
+                                    node& tmp = tmpSubsetInfo.addr[r1];
                                     double r2 = R.drand();
                                     if (r2 < tmp.w / maxw)
                                     {
@@ -156,6 +156,16 @@ int main(int argc, char** argv)
                                             cs_exist[newLevelID][tmp.id] = 1;
                                             candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
                                         }
+                                    }
+                                    node& former = tmpSubsetInfo.addr[cnt];
+                                    if (cnt != r1 && cnt < rbio - 1)
+                                    {
+                                        uint id = former.id;
+                                        double w = former.w;
+                                        former.id = tmp.id;
+                                        former.w = tmp.w;
+                                        tmp.id = id;
+                                        tmp.w = w;
                                     }
                                 }
                             }
