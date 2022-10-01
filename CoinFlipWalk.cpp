@@ -127,7 +127,7 @@ int main(int argc, char** argv)
                             double maxw = tmpSubsetInfo.maxw;
                             tmpBitmap -= maxw;
                             int subsetSize = tmpSubsetInfo.lastIdx;
-                            if (skipIdx > subsetSize) {
+                            if (skipIdx >= subsetSize) {
                                 skipIdx -= subsetSize;
                                 continue;
                             }
