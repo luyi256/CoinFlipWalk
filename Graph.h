@@ -785,22 +785,9 @@ public:
 		neiWeight = filedir + filelabel + ".outWEdges";
 		neiNum = filedir + filelabel + ".outPtr";
 		graphAttr = filedir + filelabel + ".attribute";
+		string subsetNumFilename = "./runlog/" + filelabel + ".subsetNum";
+		ofstream subsetNumFile(subsetNumFilename.c_str(), ios::out);
 		cout << "FilePath: " << graphAttr.c_str() << endl;
-		readFile(graphAttr, neiNode, neiWeight, neiNum);
-	}
-
-	~subsetGraph()
-	{
-	}
-
-	void getAddEdge(long num)
-	{
-		cout << "No update file. Try MCAR first and then run MCSS" << endl;
-		exit(-1);
-	}
-
-	void readFile(const string& graphAttr, const string& neiNode, const string& neiWeight, const string& neiNum)
-	{
 		cout << "Read graph attributes..." << endl;
 		string tmp;
 		ifstream graphAttrIn(graphAttr.c_str());
@@ -850,13 +837,16 @@ public:
 			if (maxw == 0)continue;
 			nonEmptySet[i] = new subsetInfo[most_bit + 1];
 			int nonESIdx = 0;
+			int subsetNum = 0;
 			for (auto iter = sizeSubset.begin(); iter != sizeSubset.end(); iter++)
 			{
 				int size = iter->second * 2 > 10 ? iter->second * 2 : 10;
 				node* tmpArr = new node[size];
 				bitmap[i] += 1 << iter->first;
 				nonEmptySet[i][iter->first] = { tmpArr, pow(2, iter->first), size, 0 };
+				subsetNum++;
 			}
+			subsetNumFile << subsetNum << endl;
 			for (uint j = 0; j < outSize; j++)
 			{
 				int subsetID = ceil(log2(neighbor[j].w));
@@ -866,9 +856,20 @@ public:
 				adjList[i][neighbor[j].id] = make_pair(subsetID, tmpSubsetInfo.lastIdx++);
 			}
 		}
+		subsetNumFile.close();
 		neiNumIn.close();
 		neiWeightIn.close();
 		neiNodeIn.close();
+	}
+
+	~subsetGraph()
+	{
+	}
+
+	void getAddEdge(long num)
+	{
+		cout << "No update file. Try MCAR first and then run MCSS" << endl;
+		exit(-1);
 	}
 
 	void update()
