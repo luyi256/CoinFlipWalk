@@ -65,7 +65,163 @@ public:
 		neiNum = filedir + filelabel + ".outPtr";
 		graphAttr = filedir + filelabel + ".attribute";
 		cout << "FilePath: " << graphAttr.c_str() << endl;
-		readFile(graphAttr, neiNode, neiWeight, neiNum);
+		cout << "Read graph attributes..." << endl;
+		string tmp;
+		ifstream graphAttrIn(graphAttr.c_str());
+		if (!graphAttrIn) {
+			uint m = 0;
+			string filename = filedir + filelabel + ".txt";
+			ifstream infile;
+			infile.open(filename);
+			if (!infile)
+			{
+				cout << "ERROR: unable to open source dataset: " << filename << endl;
+				exit(-1);
+			}
+
+			cout << "Read the original txt file..." << endl;
+			uint from;
+			uint to;
+			double weight;
+			uint n = 0;
+			while (infile >> from >> to >> weight)
+			{
+				if (from > n) n = from;
+				else if (to > n) n = to;
+			}
+			n++;
+			infile.clear();
+			infile.seekg(0);
+			uint* indegree = new uint[n];
+			uint* outdegree = new uint[n];
+			for (uint i = 0; i < n; i++)
+			{
+				indegree[i] = 0;
+				outdegree[i] = 0;
+			}
+			// read graph and get degree info
+
+			while (infile >> from >> to >> weight)
+			{
+				outdegree[from]++;
+				indegree[to]++;
+			}
+
+			uint** inAdjList = new uint * [n];
+			uint** outAdjList = new uint * [n];
+
+			double** inAdjWList = new double* [n];
+			double** outAdjWList = new double* [n];
+
+			uint* pointer_in = new uint[n];
+			uint* pointer_out = new uint[n];
+			for (uint i = 0; i < n; i++)
+			{
+				inAdjList[i] = new uint[indegree[i]];
+				outAdjList[i] = new uint[outdegree[i]];
+
+				inAdjWList[i] = new double[indegree[i]];
+				outAdjWList[i] = new double[outdegree[i]];
+
+				pointer_in[i] = 0;
+				pointer_out[i] = 0;
+			}
+			infile.clear();
+			infile.seekg(0);
+
+			while (infile >> from >> to >> weight)
+			{
+				outAdjList[from][pointer_out[from]] = to;
+				outAdjWList[from][pointer_out[from]] = weight;
+				pointer_out[from]++;
+				inAdjList[to][pointer_in[to]] = from;
+				inAdjWList[to][pointer_in[to]] = weight;
+				pointer_in[to]++;
+				m++;
+			}
+			infile.close();
+			delete pointer_in;
+			delete pointer_out;
+
+			cout << "Write to csr file..." << endl;
+			uint* coutEL = new uint[m];
+			uint* coutPL = new uint[n + 1];
+			double* coutWEL = new double[m];
+			coutPL[0] = 0;
+			uint outid = 0;
+			uint out_curnum = 0;
+			for (uint i = 0; i < n; i++)
+			{
+				outid += outdegree[i];
+				coutPL[i + 1] = outid;
+				for (uint j = 0; j < outdegree[i]; j++)
+				{
+					coutEL[out_curnum] = outAdjList[i][j];
+					coutWEL[out_curnum] = outAdjWList[i][j];
+					out_curnum += 1;
+				}
+			}
+			ofstream cout_attr(filedir + filelabel + ".attribute");
+			cout_attr << "n " << n << "\n";
+			cout_attr << "m " << m << "\n";
+			cout_attr.close();
+			ofstream foutEL(filedir + filelabel + ".outEdges", ios::out | ios::binary);
+			ofstream foutPL(filedir + filelabel + ".outPtr", ios::out | ios::binary);
+			ofstream foutWEL(filedir + filelabel + ".outWEdges", ios::out | ios::binary);
+			foutEL.write((char*)&coutEL[0], sizeof(coutEL[0]) * m);
+			foutPL.write((char*)&coutPL[0], sizeof(coutPL[0]) * (n + 1));
+			foutWEL.write((char*)&coutWEL[0], sizeof(coutWEL[0]) * m);
+
+			foutEL.close();
+			foutPL.close();
+			foutWEL.close();
+
+			delete[] coutPL;
+			delete[] coutEL;
+			delete[] coutWEL;
+			graphAttrIn.close();
+			graphAttrIn.open(graphAttr.c_str());
+		}
+		graphAttrIn >> tmp >> n;
+		cout << "n=" << n << endl;
+		graphAttrIn.close();
+		cout << "Read graph ..." << endl;
+		ifstream neiNumIn(neiNum.c_str(), ios::in | ios::binary);
+		ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
+		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
+		uint outSize;
+		uint outSizeSum = 0, preOutSizeSum = 0;
+		neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
+		neighborList = new vector<node>[n];
+		adjList = new unordered_map<uint, int>[n];
+		outSizeList = new uint[n];
+		maxWeight = new double[n];
+		int processWei = 0;
+		if (neiNode.find("affinity") > 0) processWei = 1;
+		for (uint i = 0; i < n; i++)
+		{
+			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
+			outSize = outSizeSum - preOutSizeSum;
+			preOutSizeSum = outSizeSum;
+			double maxw = 0;
+			for (uint j = 0; j < outSize; j++)
+			{
+				uint id;
+				double w;
+				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
+				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
+				if (processWei) w = w * 100000 > 1 ? w * 100000 : 1;
+				if (w > maxw)
+					maxw = w;
+				neighborList[i].push_back(node(id, w));
+				adjList[i][id] = j;
+			}
+			outSizeList[i] = outSize;
+			maxWeight[i] = maxw;
+		}
+		neiNumIn.close();
+		neiWeightIn.close();
+		neiNodeIn.close();
 	}
 
 	void getQuery(const string& queryname)
@@ -195,52 +351,6 @@ public:
 		output.close();
 	}
 
-	void readFile(const string& graphAttr, const string& neiNode, const string& neiWeight, const string& neiNum)
-	{
-		cout << "Read graph attributes..." << endl;
-		string tmp;
-		ifstream graphAttrIn(graphAttr.c_str());
-		graphAttrIn >> tmp >> n;
-		cout << "n=" << n << endl;
-		graphAttrIn.close();
-		cout << "Read graph ..." << endl;
-		ifstream neiNumIn(neiNum.c_str(), ios::in | ios::binary);
-		ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
-		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
-		uint outSize;
-		uint outSizeSum = 0, preOutSizeSum = 0;
-		neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
-		neighborList = new vector<node>[n];
-		adjList = new unordered_map<uint, int>[n];
-		outSizeList = new uint[n];
-		maxWeight = new double[n];
-		int processWei = 0;
-		if (neiNode.find("affinity") > 0) processWei = 1;
-		for (uint i = 0; i < n; i++)
-		{
-			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
-			outSize = outSizeSum - preOutSizeSum;
-			preOutSizeSum = outSizeSum;
-			double maxw = 0;
-			for (uint j = 0; j < outSize; j++)
-			{
-				uint id;
-				double w;
-				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
-				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
-				if (processWei) w = w * 100000 > 1 ? w * 100000 : 1;
-				if (w > maxw)
-					maxw = w;
-				neighborList[i].push_back(node(id, w));
-				adjList[i][id] = j;
-			}
-			outSizeList[i] = outSize;
-			maxWeight[i] = maxw;
-		}
-		neiNumIn.close();
-		neiWeightIn.close();
-		neiNodeIn.close();
-	}
 };
 
 // class BITPrefixSumGraph : public Graph
