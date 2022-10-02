@@ -230,12 +230,7 @@ public:
 		pair<int, double>* aliasD = new pair<int, double>[n];
 		for (uint i = 0; i < n; i++)
 		{
-			double outweight = 0.0;
-			for (uint j = 0; j < outSizeList[i]; j++)
-			{
-				outweight += neighborList[i][j].w;
-			}
-			aliasD[i] = make_pair(i, outweight);
+			aliasD[i] = make_pair(i, outSizeList[i]);
 		}
 		Alias alias = Alias(aliasD, n);
 		Random R;

@@ -144,7 +144,7 @@ int main(int argc, char** argv)
                             {
                                 boost::binomial_distribution<> bio(subsetSize, increMax);
                                 int rbio = bio(rng);
-                                if ((rbio << 3) > subsetSize)
+                                if ((rbio << 2) > subsetSize)
                                 {
                                     for (int cnt = 0;cnt < rbio;cnt++) {
                                         int r1 = int(floor(R.drand() * (subsetSize - cnt))) + cnt;
