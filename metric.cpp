@@ -18,12 +18,12 @@ struct node
     uint id;
     double w;
     node(uint _id, double _w) : id(_id), w(_w) {}
-    node(const node &tmp)
+    node(const node& tmp)
     {
         id = tmp.id;
         w = tmp.w;
     }
-    node &operator=(const node &tmp)
+    node& operator=(const node& tmp)
     {
         id = tmp.id;
         w = tmp.w;
@@ -42,7 +42,7 @@ public:
     unordered_map<uint, double> outWeightList;
     double totdeg;
     Graph() {}
-    Graph(const string &_filedir, const string &_filelabel)
+    Graph(const string& _filedir, const string& _filelabel)
     {
         R = Random();
         totdeg = 0;
@@ -60,7 +60,7 @@ public:
     {
     }
 
-    void readFile(const string &graphAttr, const string &neiNode, const string &neiWeight, const string &neiNum)
+    void readFile(const string& graphAttr, const string& neiNode, const string& neiWeight, const string& neiNum)
     {
         cout << "Read graph attributes..." << endl;
         string tmp;
@@ -75,19 +75,19 @@ public:
         ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
         uint outSize;
         uint outSizeSum = 0, preOutSizeSum = 0;
-        neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+        neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
         for (uint i = 0; i < n; i++)
         {
             double outWeight = 0;
-            neiNumIn.read(reinterpret_cast<char *>(&outSizeSum), sizeof(uint));
+            neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
             outSize = outSizeSum - preOutSizeSum;
             preOutSizeSum = outSizeSum;
             for (uint j = 0; j < outSize; j++)
             {
                 uint id;
                 double w;
-                neiNodeIn.read(reinterpret_cast<char *>(&id), sizeof(uint));
-                neiWeightIn.read(reinterpret_cast<char *>(&w), sizeof(double));
+                neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
+                neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
                 neighborList[i].push_back(node(id, w));
                 outWeight += w;
             }
@@ -106,12 +106,12 @@ class metric
 {
 private:
     uint vert;
-    double *gtvalues;
+    double* gtvalues;
     vector<pair<double, uint>> unnm_algoanswers;
     vector<pair<double, int>> unnm_gtanswers;
     uint k;
-    double *algovalues;
-    bool *algocheck;
+    double* algovalues;
+    bool* algocheck;
     vector<uint> topk_algo_Nodes;
 
 public:
@@ -165,7 +165,7 @@ double metric::conductance()
     double crt_vol = 0;
     double crt_Phi = 1.0;
     uint nonzero = unnm_algoanswers.size();
-    uint *cutcheck = new uint[cvert]();
+    uint* cutcheck = new uint[cvert]();
 
     for (uint i = 0; i < nonzero; i++)
     {
@@ -226,7 +226,7 @@ double metric::conductance()
 double metric::cal_l1Error()
 {
     double l1Err = 0;
-    uint *nnzarr = new uint[vert]();
+    uint* nnzarr = new uint[vert]();
     double tmp_err;
     for (uint j = 0; j < unnm_algoanswers.size(); j++)
     {
@@ -250,7 +250,7 @@ double metric::cal_l1Error()
 double metric::cal_maxAE()
 {
     double err = 0;
-    uint *nnzarr = new uint[vert]();
+    uint* nnzarr = new uint[vert]();
     double tmp_err, max_err = 0, algoans, gtans;
     uint max_node = -1;
     for (uint j = 0; j < unnm_algoanswers.size(); j++)
@@ -281,9 +281,9 @@ double metric::cal_maxAE()
         }
     }
     cout << "max node:" << max_node << endl
-         << "max err:" << max_err << endl
-         << "algoans:" << algoans << endl
-         << "gtans:" << gtans << endl;
+        << "max err:" << max_err << endl
+        << "algoans:" << algoans << endl
+        << "gtans:" << gtans << endl;
     delete[] nnzarr;
     return max_err;
 }
@@ -304,8 +304,14 @@ metric::metric(string filedir, string filelabel, string algoname, long querynum,
         // cout << "powermethod path:" << ss_gt.str() << endl;
         if (!gtin)
         {
-            cout << "ERROR:unable to open groundtruth file " << ss_gt.str() << endl;
-            return;
+            stringstream ss_gtin;
+            ss_gtin << "./result/powermethod/" << filelabel << "/" << L << "/" << u << "_gt.txt";
+            gtin.open(ss_gtin.str());
+            if (!gtin)
+            {
+                cout << "ERROR:unable to open groundtruth file " << ss_gt.str() << endl;
+                return;
+            }
         }
 
         stringstream ss_algo;
@@ -419,10 +425,10 @@ metric::~metric()
 {
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     long i = 1;
-    char *endptr;
+    char* endptr;
     string filedir, filelabel, algoname;
     int querynum;
     double eps;
@@ -504,10 +510,10 @@ int main(int argc, char **argv)
         metric m(filedir, filelabel, algoname, querynum, L, *it, thetad);
     cout << "finish at ";
     time_t t = time(0); // get time now
-    tm *now = localtime(&t);
+    tm* now = localtime(&t);
     cout << (now->tm_year + 1900) << '-'
-         << (now->tm_mon + 1) << '-'
-         << now->tm_mday
-         << "\n";
+        << (now->tm_mon + 1) << '-'
+        << now->tm_mday
+        << "\n";
     return 0;
 }
