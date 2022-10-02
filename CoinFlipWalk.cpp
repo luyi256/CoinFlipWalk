@@ -159,9 +159,9 @@ int main(int argc, char** argv)
                                                 candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
                                             }
                                         }
-                                        node& former = tmpSubsetInfo.addr[cnt];
                                         if (cnt != r1 && cnt < rbio - 1)
                                         {
+                                            node& former = tmpSubsetInfo.addr[cnt];
                                             uint id = former.id;
                                             double w = former.w;
                                             former.id = tmp.id;
