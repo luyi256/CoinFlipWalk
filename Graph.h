@@ -103,27 +103,18 @@ public:
 
 			while (infile >> from >> to >> weight)
 			{
-				outdegree[from]++;
-				indegree[to]++;
+				outdegree[from] += 1;
+				indegree[to] += 1;
+				indegree[from] += 1;
+				outdegree[to] += 1;
 			}
-
-			uint** inAdjList = new uint * [n];
 			uint** outAdjList = new uint * [n];
-
-			double** inAdjWList = new double* [n];
 			double** outAdjWList = new double* [n];
-
-			uint* pointer_in = new uint[n];
 			uint* pointer_out = new uint[n];
 			for (uint i = 0; i < n; i++)
 			{
-				inAdjList[i] = new uint[indegree[i]];
 				outAdjList[i] = new uint[outdegree[i]];
-
-				inAdjWList[i] = new double[indegree[i]];
 				outAdjWList[i] = new double[outdegree[i]];
-
-				pointer_in[i] = 0;
 				pointer_out[i] = 0;
 			}
 			infile.clear();
@@ -134,19 +125,18 @@ public:
 				outAdjList[from][pointer_out[from]] = to;
 				outAdjWList[from][pointer_out[from]] = weight;
 				pointer_out[from]++;
-				inAdjList[to][pointer_in[to]] = from;
-				inAdjWList[to][pointer_in[to]] = weight;
-				pointer_in[to]++;
+				outAdjList[to][pointer_out[to]] = from;
+				outAdjWList[to][pointer_out[to]] = weight;
+				pointer_out[to]++;
 				m++;
 			}
 			infile.close();
-			delete pointer_in;
 			delete pointer_out;
 
 			cout << "Write to csr file..." << endl;
-			uint* coutEL = new uint[m];
+			uint* coutEL = new uint[2 * m];
 			uint* coutPL = new uint[n + 1];
-			double* coutWEL = new double[m];
+			double* coutWEL = new double[2 * m];
 			coutPL[0] = 0;
 			uint outid = 0;
 			uint out_curnum = 0;
@@ -197,7 +187,7 @@ public:
 		outSizeList = new uint[n];
 		maxWeight = new double[n];
 		int processWei = 0;
-		if (neiNode.find("affinity") > 0) processWei = 1;
+		if (neiNode.find("affinity") != string::npos) processWei = 1;
 		for (uint i = 0; i < n; i++)
 		{
 			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
