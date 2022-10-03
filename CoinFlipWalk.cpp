@@ -161,6 +161,37 @@ int main(int argc, char** argv)
                                         }
                                     }
                                 }
+                                int leftSize = subsetSize - skipIdx - 1;
+                                int expect = leftSize * increMax;
+                                if (expect > 16) {
+                                    boost::binomial_distribution<> bio(leftSize, increMax);
+                                    int rbio = bio(rng);
+                                    for (int cnt = 0;cnt < rbio;cnt++) {
+                                        int r1 = int(floor(R.drand() * (subsetSize - cnt))) + cnt;
+                                        node& tmp = tmpSubsetInfo.addr[r1];
+                                        double r2 = R.drand();
+                                        if (r2 < tmp.w / maxw)
+                                        {
+                                            prob[newLevelID][tmp.id] += 1;
+                                            if (cs_exist[newLevelID][tmp.id] == 0)
+                                            {
+                                                cs_exist[newLevelID][tmp.id] = 1;
+                                                candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
+                                            }
+                                        }
+                                        node& former = tmpSubsetInfo.addr[cnt];
+                                        if (cnt != r1 && cnt < rbio - 1)
+                                        {
+                                            uint id = former.id;
+                                            double w = former.w;
+                                            former.id = tmp.id;
+                                            former.w = tmp.w;
+                                            tmp.id = id;
+                                            tmp.w = w;
+                                        }
+                                    }
+                                    skipIdx = -1;
+                                }
                                 boost::geometric_distribution<> geo(1 - increMax);
                                 skipIdx += geo(rng);
                                 while (skipIdx < subsetSize) {
