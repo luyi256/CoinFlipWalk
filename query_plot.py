@@ -5,8 +5,12 @@ from datetime import datetime
 import pytz
 #! args
 # 选择提取哪些数据集，会往本地写数据，文件：'.datalog/[date]_[measurement].data'
-datasets = ["threads-stack-overflow","colisten-Spotify","indochina-2004"]
+datasets = ["temporal-reddit-reply", "threads-stack-overflow", "tags-stack-overflow"]
 # "threads-stack-overflow" "colisten-Spotify" "bitcoin-temporal" "indochina-2004" "twitter-2010"
+# "youtube" "soc-LiveJournal1" "indochina-2004" "orkut-links" "tags-stack-overflow" "threads-stack-overflow" "blockchair" "colisten-Spotify" "bitcoin-temporal"
+# "colisten-Spotify" "indochina-2004" "bitcoin-temporal""block_ethereum"
+# "threads-stack-overflow" "colisten-Spotify" "bitcoin-temporal" "indochina-2004" "twitter-2010" "coauth-MAG" "coauth-AMiner" "temporal-reddit-reply" "colisten-Spotify" "twitter-2010" "coauth-MAG-History" "coauth-DBLP" "tags-ask-ubuntu"
+# "revision_affinity_10000_1", "revision_affinity_10000_13", "revision_affinity_10000_20", "revision_affinity_v2_10000_1"
 path = './analysis/'
 measures = ['conductance', 'maxerr', 'precision']
 #!! 算法是必须跑四个的，不然要牵一发而动全身
@@ -29,7 +33,11 @@ datasets_alias = {
     "block_ethereum": 'ET',
     "blockchair": 'BC',
     "clickstream": "CL",
-    "temporal-reddit-reply": 'RR'
+    "temporal-reddit-reply": 'RR',
+    "revision_affinity_10000_1":"AFF_1_1",
+     "revision_affinity_10000_13" :"AFF_1_13",
+     "revision_affinity_10000_20":"AFF_1_20",
+      "revision_affinity_v2_10000_1":"AFF_1_1_v2"
 }
 # algos = ['MCAM', 'MCSS', 'MCPS', 'MCAR']
 # algos = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
