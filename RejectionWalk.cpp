@@ -10,7 +10,7 @@
 using namespace std;
 typedef unsigned int uint;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     long querynum = 10;
     vector<double> epss;
@@ -30,9 +30,9 @@ int main(int argc, char **argv)
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
     cout << "Input query file from: " << queryname << endl;
-    double *final_p = new double[g.n];
-    uint *final_node = new uint[g.n];
-    uint *final_exist = new uint[g.n];
+    double* final_p = new double[g.n];
+    uint* final_node = new uint[g.n];
+    uint* final_exist = new uint[g.n];
     uint final_count = 0;
     for (uint i = 0; i < g.n; i++)
     {
@@ -60,6 +60,7 @@ int main(int argc, char **argv)
             uint nodeId;
             query >> nodeId;
             cout << i << ": " << nodeId << endl;
+            cout << "outSize:" << g.outSizeList[nodeId] << endl;
             clock_t t0 = clock();
             final_count = 0;
             unsigned long long w = 1 / eps / 0.25;
@@ -127,8 +128,8 @@ int main(int argc, char **argv)
         cout << endl;
         cout << "query time: " << avg_time / (double)querynum << " s" << endl;
         cout << "==== "
-             << "RejectionWalk"
-             << " with " << eps << " on " << filelabel << " done!====" << endl;
+            << "RejectionWalk"
+            << " with " << eps << " on " << filelabel << " done!====" << endl;
         writecsv << avg_time / (double)querynum << ',';
     }
 
@@ -136,8 +137,8 @@ int main(int argc, char **argv)
     delete[] final_node;
     delete[] final_exist;
     cout << endl
-         << endl
-         << endl;
+        << endl
+        << endl;
 
     writecsv.close();
 }
