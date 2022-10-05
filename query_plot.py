@@ -5,7 +5,7 @@ from datetime import datetime
 import pytz
 #! args
 # 选择提取哪些数据集，会往本地写数据，文件：'.datalog/[date]_[measurement].data'
-datasets = ["colisten-Spotify" ,"temporal-reddit-reply"]
+datasets = [ "coauth-MAG-History", "coauth-DBLP"]
 # "threads-stack-overflow" "colisten-Spotify" "bitcoin-temporal" "indochina-2004" "twitter-2010","orkut-links" ,"tags-stack-overflow"
 path = './analysis/'
 measures = ['conductance', 'maxerr', 'precision']
@@ -30,10 +30,13 @@ datasets_alias = {
     "blockchair": 'BC',
     "clickstream": "CL",
     "temporal-reddit-reply": 'RR',
-    "revision_affinity_10000_1":'AF1_1',
+    "revision_affinity_10000_1":'AG-1',
     "revision_affinity_10000_13":'AF_1_13',
     "revision_affinity_10000_20":'AF_1_20',
-    "revision_affinity_v2_10000_1":'AF_1_1_v2'
+    "revision_affinity_v2_10000_1":'AG-2',
+     "tags-ask-ubuntu":"ASK",
+     "coauth-MAG-History":"MH",
+     "coauth-DBLP":"DBLP"
 }
 # algos = ['MCAM', 'MCSS', 'MCPS', 'MCAR']
 # algos = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
