@@ -149,26 +149,64 @@ int main(int argc, char** argv)
                             else
                             {
                                 if (skipIdx >= 0) {
-                                    const node& tmp = tmpSubsetInfo.addr[skipIdx];
+                                    const node& tmpnode = tmpSubsetInfo.addr[skipIdx];
                                     double r2 = R.drand();
-                                    if (r2 < tmp.w / lastMaxw)
+                                    if (r2 < tmpnode.w / lastMaxw)
                                     {
-                                        prob[newLevelID][tmp.id] += 1;
-                                        if (cs_exist[newLevelID][tmp.id] == 0)
+                                        prob[newLevelID][tmpnode.id] += 1;
+                                        if (cs_exist[newLevelID][tmpnode.id] == 0)
                                         {
-                                            cs_exist[newLevelID][tmp.id] = 1;
-                                            candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
+                                            cs_exist[newLevelID][tmpnode.id] = 1;
+                                            candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
                                         }
                                     }
                                 }
                                 int leftSize = subsetSize - skipIdx - 1;
+                                if (leftSize < 3) {
+                                    for (uint setidx = skipIdx + 1; setidx < subsetSize; setidx++)
+                                    {
+                                        const node& tmpnode = tmpSubsetInfo.addr[setidx];
+                                        if (R.drand() < tmpnode.w * incre)
+                                        {
+                                            prob[newLevelID][tmpnode.id] += 1;
+                                            if (cs_exist[newLevelID][tmpnode.id] == 0)
+                                            {
+                                                cs_exist[newLevelID][tmpnode.id] = 1;
+                                                candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
+                                            }
+                                        }
+                                    }
+                                    skipIdx = -1;
+                                    continue;
+                                }
                                 int expect = leftSize * increMax;
-                                if (expect > 16) {
+                                if (expect > 14) {
                                     boost::binomial_distribution<> bio(leftSize, increMax);
                                     int rbio = bio(rng);
                                     for (int cnt = 0;cnt < rbio;cnt++) {
-                                        int r1 = int(floor(R.drand() * (subsetSize - cnt))) + cnt;
-                                        node& tmp = tmpSubsetInfo.addr[r1];
+                                        int firstIdx = cnt + skipIdx + 1;
+                                        int r1 = int(floor(R.drand() * (leftSize - cnt))) + firstIdx;
+                                        node& tmpnode = tmpSubsetInfo.addr[r1];
+                                        double r2 = R.drand();
+                                        if (r2 < tmpnode.w / maxw)
+                                        {
+                                            prob[newLevelID][tmpnode.id] += 1;
+                                            if (cs_exist[newLevelID][tmpnode.id] == 0)
+                                            {
+                                                cs_exist[newLevelID][tmpnode.id] = 1;
+                                                candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
+                                            }
+                                        }
+                                        node& former = tmpSubsetInfo.addr[firstIdx];
+                                        if (firstIdx != r1 && cnt < rbio - 1) swap(former, tmpnode);
+                                    }
+                                    skipIdx = -1;
+                                }
+                                else {
+                                    boost::geometric_distribution<> geo(1 - increMax);
+                                    skipIdx += geo(rng);
+                                    while (skipIdx < subsetSize) {
+                                        const node& tmp = tmpSubsetInfo.addr[skipIdx];
                                         double r2 = R.drand();
                                         if (r2 < tmp.w / maxw)
                                         {
@@ -179,37 +217,11 @@ int main(int argc, char** argv)
                                                 candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
                                             }
                                         }
-                                        node& former = tmpSubsetInfo.addr[cnt];
-                                        if (cnt != r1 && cnt < rbio - 1)
-                                        {
-                                            uint id = former.id;
-                                            double w = former.w;
-                                            former.id = tmp.id;
-                                            former.w = tmp.w;
-                                            tmp.id = id;
-                                            tmp.w = w;
-                                        }
+                                        skipIdx += geo(rng);
                                     }
-                                    skipIdx = -1;
+                                    skipIdx -= subsetSize;
+                                    lastMaxw = maxw;
                                 }
-                                boost::geometric_distribution<> geo(1 - increMax);
-                                skipIdx += geo(rng);
-                                while (skipIdx < subsetSize) {
-                                    const node& tmp = tmpSubsetInfo.addr[skipIdx];
-                                    double r2 = R.drand();
-                                    if (r2 < tmp.w / maxw)
-                                    {
-                                        prob[newLevelID][tmp.id] += 1;
-                                        if (cs_exist[newLevelID][tmp.id] == 0)
-                                        {
-                                            cs_exist[newLevelID][tmp.id] = 1;
-                                            candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
-                                        }
-                                    }
-                                    skipIdx += geo(rng);
-                                }
-                                skipIdx -= subsetSize;
-                                lastMaxw = maxw;
                             }
                         }
                     }
