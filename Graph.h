@@ -74,12 +74,7 @@ public:
 		pair<int, double>* aliasD = new pair<int, double>[n];
 		for (uint i = 0; i < n; i++)
 		{
-			double outweight = 0.0;
-			for (uint j = 0; j < outSizeList[i]; j++)
-			{
-				outweight += neighborList[i][j].w;
-			}
-			aliasD[i] = make_pair(i, outweight);
+			aliasD[i] = make_pair(i, outSizeList[i]);
 		}
 		Alias alias = Alias(aliasD, n);
 		Random R;
@@ -215,7 +210,7 @@ public:
 		outSizeList = new uint[n];
 		maxWeight = new double[n];
 		int processWei = 0;
-		if (neiNode.find("affinity") > 0) processWei = 1;
+		if (neiNode.find("affinity") != string::npos) processWei = 1;
 		for (uint i = 0; i < n; i++)
 		{
 			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
