@@ -5,7 +5,8 @@ from datetime import datetime
 import pytz
 #! args
 # 选择提取哪些数据集，会往本地写数据，文件：'.datalog/[date]_[measurement].data'
-datasets = [ "coauth-MAG-History", "coauth-DBLP"]
+datasets = []
+# "indochina-2004" "tags-stack-overflow" "threads-stack-overflow" "colisten-Spotify" "temporal-reddit-reply"  "twitter-2010"
 # "threads-stack-overflow" "colisten-Spotify" "bitcoin-temporal" "indochina-2004" "twitter-2010","orkut-links" ,"tags-stack-overflow"
 path = './analysis/'
 measures = ['conductance', 'maxerr', 'precision']
@@ -50,7 +51,7 @@ ylabel = {
 }
 measureIdx = {'precision': 1, 'conductance': 2, 'maxerr': 3}
 # colors = ['#263FA9', '#447B48', '#E85472', '#A686EC']
-colors = ['#447B48', '#E85472', '#A686EC']
+colors = ['#1F1DBF', '#E85472', '#447B48']
 # markers = ["x", "s", "o", "+"]
 markers = ["s", "o", "+"]
 tz = pytz.timezone('Asia/Shanghai')
@@ -85,10 +86,10 @@ for measure in measures:
         if measureIdx[measure] == 3:
             ax.set_yscale('log')
         ax.set_xscale('log')
-        plt.xlabel('query time(s)-' + datasets_alias[dataset], fontsize=15)
+        plt.xlabel('query time(s)-' + datasets_alias[dataset], fontsize=18)
         ax.tick_params(axis='both', which='major', labelsize=15)
-        plt.ylabel(measure + '-' + datasets_alias[dataset], fontsize=15)
-        plt.legend(prop={'size': 10})
+        plt.ylabel(measure + '-' + datasets_alias[dataset], fontsize=18)
+        plt.legend(prop={'size': 13},fontsize=18)
         plt.tight_layout()
         plt.savefig(
             figpath +
