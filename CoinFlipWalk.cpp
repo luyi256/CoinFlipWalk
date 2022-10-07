@@ -150,8 +150,8 @@ int main(int argc, char** argv)
                             {
                                 if (skipIdx >= 0) {
                                     const node& tmpnode = tmpSubsetInfo.addr[skipIdx];
-                                    boost::binomial_distribution<> bio(1, tmpnode.w / lastMaxw);
-                                    if (bio(rng))
+                                    double r2 = R.drand();
+                                    if (r2 < tmpnode.w / lastMaxw)
                                     {
                                         prob[newLevelID][tmpnode.id] += 1;
                                         if (cs_exist[newLevelID][tmpnode.id] == 0)
@@ -163,7 +163,7 @@ int main(int argc, char** argv)
                                 }
                                 int leftSize = subsetSize - skipIdx - 1;
                                 int bio_expect = leftSize * increMax;
-                                if (bio_expect > 1.5 && leftSize >= 20) {
+                                if (bio_expect > g.avg_degree_div3 && leftSize > 1) {
                                     boost::binomial_distribution<> bio(leftSize, increMax);
                                     int rbio = bio(rng);
                                     for (int cnt = 0;cnt < rbio;cnt++) {
@@ -188,15 +188,13 @@ int main(int argc, char** argv)
                                             former.w = tmpnode.w;
                                             tmpnode.id = tmpid;
                                             tmpnode.w = tmpw;
-
                                         }
                                     }
                                     skipIdx = -1;
                                     continue;
                                 }
                                 else {
-                                    int geo_expect = floor(1.0 / increMax);
-                                    if (leftSize >= 14) {
+                                    if (leftSize > 1) {
                                         boost::geometric_distribution<> geo(1 - increMax);
                                         skipIdx += geo(rng);
                                         while (skipIdx < subsetSize) {
@@ -221,8 +219,8 @@ int main(int argc, char** argv)
                                 for (uint setidx = skipIdx + 1; setidx < subsetSize; setidx++)
                                 {
                                     const node& tmpnode = tmpSubsetInfo.addr[setidx];
-                                    boost::binomial_distribution<> bio(1, tmpnode.w * incre);
-                                    if (bio(rng))
+                                    double r2 = R.drand();
+                                    if (r2 < tmpnode.w * incre)
                                     {
                                         prob[newLevelID][tmpnode.id] += 1;
                                         if (cs_exist[newLevelID][tmpnode.id] == 0)
