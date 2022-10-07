@@ -72,10 +72,13 @@ public:
 	{
 		cout << "Generate query file..." << endl;
 		pair<int, double>* aliasD = new pair<int, double>[n];
+		vector<uint> sortedSize;
 		for (uint i = 0; i < n; i++)
 		{
 			aliasD[i] = make_pair(i, outSizeList[i]);
+			sortedSize.push_back(outSizeList[i]);
 		}
+		sort(sortedSize.begin(), sortedSize.end(), greater<uint>());
 		Alias alias = Alias(aliasD, n);
 		Random R;
 		ofstream query(queryname);
@@ -524,7 +527,7 @@ public:
 		outSizeList = new uint[n];
 		outWeightList = new double[n];
 		int processWei = 0;
-		if (neiNode.find("affinity") > 0) processWei = 1;
+		if (neiNode.find("affinity") != string::npos) processWei = 1;
 		for (uint i = 0; i < n; i++)
 		{
 			double outWeight = 0;
@@ -710,7 +713,7 @@ public:
 		uint outSizeSum = 0, preOutSizeSum = 0;
 		neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
 		int processWei = 0;
-		if (neiNode.find("affinity") > 0) processWei = 1;
+		if (neiNode.find("affinity") != string::npos) processWei = 1;
 		for (uint i = 0; i < n; i++)
 		{
 			double outWeight = 0;
@@ -763,13 +766,13 @@ public:
 		int size;
 		int lastIdx;
 	} subsetInfo;
-	uint n;
+	uint n, m;
 	string filedir, filelabel;
 	double* outWeightList;
 	unordered_map<uint, pair<int, int>>* adjList;
 	subsetInfo** nonEmptySet;
 	uint* bitmap;
-
+	double avg_degree_div3;
 	subsetGraph() {}
 	subsetGraph(const string& _filedir, const string& _filelabel)
 	{
@@ -801,6 +804,9 @@ public:
 		ifstream graphAttrIn(graphAttr.c_str());
 		graphAttrIn >> tmp >> n;
 		cout << "n=" << n << endl;
+		graphAttrIn >> tmp >> m;
+		cout << "m=" << m << endl;
+		avg_degree_div3 = (m / double(n)) / 3;
 		graphAttrIn.close();
 		cout << "Read graph ..." << endl;
 		ifstream neiNumIn(neiNum.c_str(), ios::in | ios::binary);
