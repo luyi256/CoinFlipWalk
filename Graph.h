@@ -17,6 +17,7 @@
 #include "alias.h"
 #include "BIT.h"
 #include "AVL.h"
+#include "kll.h"
 #include "rbtree.h"
 #include "utils.h"
 #include <chrono>
@@ -53,7 +54,8 @@ public:
 	vector<node>* neighborList;
 	unordered_map<uint, int>* adjList;
 	uint* outSizeList;
-	double* maxWeight;
+	int** weightGroupNum;
+	vector<int>* weightheap;
 	Graph() {}
 	Graph(const string& _filedir, const string& _filelabel)
 	{
@@ -195,15 +197,17 @@ public:
 		neighborList = new vector<node>[n];
 		adjList = new unordered_map<uint, int>[n];
 		outSizeList = new uint[n];
-		maxWeight = new double[n];
 		int processWei = 0;
-		if (neiNode.find("affinity") !=string::npos) processWei = 1;
+		if (neiNode.find("affinity") != string::npos) processWei = 1;
+		weightGroupNum = new int* [n];
+		weightheap = new vector<int>[n];
 		for (uint i = 0; i < n; i++)
 		{
 			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
-			double maxw = 0;
+			weightGroupNum[i] = new int[most_bit + 1];
+			for (int idx = 0;idx < most_bit + 1;idx++)weightGroupNum[i][idx] = 0;
 			for (uint j = 0; j < outSize; j++)
 			{
 				uint id;
@@ -211,13 +215,14 @@ public:
 				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
 				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
 				if (processWei) w = w * 100000 > 1 ? w * 100000 : 1;
-				if (w > maxw)
-					maxw = w;
+				int groupIdx = int(ceil(log2(w)));
+				weightGroupNum[i][groupIdx]++;
+				if (weightGroupNum[i][groupIdx] == 1) weightheap[i].push_back(groupIdx);
 				neighborList[i].push_back(node(id, w));
 				adjList[i][id] = j;
 			}
 			outSizeList[i] = outSize;
-			maxWeight[i] = maxw;
+			make_heap(weightheap[i].begin(), weightheap[i].end());
 		}
 		neiNumIn.close();
 		neiWeightIn.close();
@@ -276,6 +281,11 @@ public:
 				exit(-2);
 			}
 			uint neiidx = adjList[s][t];
+			double w = neighborList[s][neiidx].w;
+			int groupIdx = int(ceil(log2(w)));
+			weightGroupNum[s][groupIdx] --;
+			if (weightGroupNum[s][groupIdx] <= 0 && weightheap[s].front() == groupIdx)
+				pop_heap(weightheap[s].begin(), weightheap[s].end());
 			uint outsize = outSizeList[s];
 			if (neiidx == outsize - 1)
 				neighborList[s].pop_back();
@@ -295,9 +305,16 @@ public:
 		begin = chrono::high_resolution_clock::now();
 		for (int i = 0; i < add_num; i++)
 		{
-			neighborList[sarr[i]].push_back(node{ tarr[i], warr[i] });
-			outSizeList[sarr[i]]++;
-			adjList[sarr[i]][tarr[i]] = neighborList[sarr[i]].size() - 1;
+			uint s = sarr[i];
+			neighborList[s].push_back(node{ tarr[i], warr[i] });
+			outSizeList[s]++;
+			adjList[s][tarr[i]] = neighborList[s].size() - 1;
+			int groupIdx = int(ceil(log2(warr[i])));
+			weightGroupNum[s][groupIdx]++;
+			if (weightGroupNum[s][groupIdx] == 1) {
+				weightheap[s].push_back(groupIdx);
+				push_heap(weightheap[s].begin(), weightheap[s].end());
+			}
 		}
 		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}

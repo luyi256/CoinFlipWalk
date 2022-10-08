@@ -19,13 +19,13 @@ int main(int argc, char** argv)
     int is_update = 0;
     argParser(argc, argv, filedir, filelabel, querynum, epss, L, is_update);
     Graph g(filedir, filelabel);
-    if (is_update)
-    {
-        g.update();
-        double pkm = peak_mem() / 1024.0 / 1024.0;
-        cout << "Total graph: peak memory: " << pkm << " G" << endl;
-        exit(0);
-    }
+    // if (is_update)
+    // {
+    g.update();
+    double pkm = peak_mem() / 1024.0 / 1024.0;
+    cout << "Total graph: peak memory: " << pkm << " G" << endl;
+    // exit(0);
+    // }
     string queryname;
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
@@ -75,7 +75,7 @@ int main(int argc, char** argv)
                 while (i++ < L)
                 {
                     uint outSize = g.outSizeList[u];
-                    double maxw = g.maxWeight[u];
+                    double maxw = pow(2, g.weightheap[u].front());
                     if (outSize == 0)
                         break;
                     while (true)
