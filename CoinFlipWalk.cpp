@@ -66,10 +66,10 @@ int main(int argc, char** argv)
     boost::mt19937 rng;
     stringstream ss_run;
     ss_run << "./analysis/CoinFlipWalk_" << filelabel << "_runtime.csv";
-    ofstream writecsv;
-    writecsv.open(ss_run.str(), ios::app);
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
     {
+        ofstream writecsv;
+        writecsv.open(ss_run.str(), ios::app);
         double eps = *epsIt;
         query.open(queryname);
         double avg_time = 0;
@@ -269,6 +269,7 @@ int main(int argc, char** argv)
             << "CoinFlipWalk"
             << " with " << eps << " on " << filelabel << " done!====" << endl;
         writecsv << avg_time / (double)querynum << ',';
+        writecsv.close();
     }
 
     delete[] cs_exist[0];
@@ -284,5 +285,5 @@ int main(int argc, char** argv)
         << endl
         << endl;
 
-    writecsv.close();
+
 }

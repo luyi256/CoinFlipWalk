@@ -42,10 +42,11 @@ int main(int argc, char** argv)
     }
     stringstream ss_run;
     ss_run << "./analysis/RejectionWalk_" << filelabel << "_runtime.csv";
-    ofstream writecsv;
-    writecsv.open(ss_run.str(), ios::app);
+
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
     {
+        ofstream writecsv;
+        writecsv.open(ss_run.str(), ios::app);
         double eps = *epsIt;
         query.open(queryname);
         if (!query)
@@ -131,6 +132,7 @@ int main(int argc, char** argv)
             << "RejectionWalk"
             << " with " << eps << " on " << filelabel << " done!====" << endl;
         writecsv << avg_time / (double)querynum << ',';
+        writecsv.close();
     }
 
     delete[] final_p;
@@ -140,5 +142,5 @@ int main(int argc, char** argv)
         << endl
         << endl;
 
-    writecsv.close();
+
 }
