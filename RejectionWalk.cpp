@@ -21,9 +21,9 @@ int main(int argc, char** argv)
     Graph g(filedir, filelabel);
     // if (is_update)
     // {
-    g.update();
-    double pkm = peak_mem() / 1024.0 / 1024.0;
-    cout << "Total graph: peak memory: " << pkm << " G" << endl;
+    // g.update();
+    // double pkm = peak_mem() / 1024.0 / 1024.0;
+    // cout << "Total graph: peak memory: " << pkm << " G" << endl;
     // exit(0);
     // }
     string queryname;
@@ -76,9 +76,9 @@ int main(int argc, char** argv)
                 while (i++ < L)
                 {
                     uint outSize = g.outSizeList[u];
-                    double maxw = pow(2, g.weightheap[u].front());
                     if (outSize == 0)
                         break;
+                    double maxw = pow(2, g.weightheap[u].front());
                     while (true)
                     {
                         double j = floor(R.drand() * outSize);
@@ -90,6 +90,8 @@ int main(int argc, char** argv)
                         }
                     }
                 }
+                if (g.outSizeList[u] == 0 && i <= L)
+                    continue;
                 final_p[u] += 1.0 / w;
                 if (final_exist[u] == 0)
                 {
