@@ -5,7 +5,7 @@ double max(double a, double b)
 struct AVLnode
 {
     double value;
-    AVLnode *left, *right;
+    AVLnode* left, * right;
     int leftHeight, rightHeight;
     int leftCount, rightCount;
     double leftSum, rightSum;
@@ -31,7 +31,7 @@ struct AVLnode
             leftSum = value;
     }
 
-    void setLeft(AVLnode *node)
+    void setLeft(AVLnode* node)
     {
         left = node;
         if (node)
@@ -48,7 +48,7 @@ struct AVLnode
         }
     }
 
-    void setRight(AVLnode *node)
+    void setRight(AVLnode* node)
     {
         right = node;
         if (node)
@@ -65,17 +65,17 @@ struct AVLnode
         }
     }
 
-    AVLnode *rotateLeft()
+    AVLnode* rotateLeft()
     {
-        AVLnode *b = right;
+        AVLnode* b = right;
         setRight(b->left);
         b->setLeft(this);
         return b;
     }
 
-    AVLnode *rotateRight()
+    AVLnode* rotateRight()
     {
-        AVLnode *b = left;
+        AVLnode* b = left;
         setLeft(b->right);
         b->setRight(this);
         return b;
@@ -87,7 +87,7 @@ struct AVLnode
     }
 };
 
-AVLnode *addNode(AVLnode *root, uint index, AVLnode *node)
+AVLnode* addNode(AVLnode* root, uint index, AVLnode* node)
 {
     if (root == NULL)
         return node;
@@ -113,7 +113,8 @@ AVLnode *addNode(AVLnode *root, uint index, AVLnode *node)
     }
     return root;
 }
-AVLnode *updateNode(AVLnode *root, uint index, double v)
+
+AVLnode* updateNode(AVLnode* root, uint index, double v)
 {
     if (root == NULL)
         return root;
@@ -130,27 +131,28 @@ AVLnode *updateNode(AVLnode *root, uint index, double v)
     return root;
 }
 
-uint prefixSumIndex(AVLnode *root, double sum, uint indexAdd)
+uint prefixSumIndex(AVLnode* root, double sum, uint indexAdd)
 {
     if (root == NULL)
         return 0;
+    if (root->left == NULL && root->right == NULL) {//leaf
+        if (root->value >= sum) return root->leftCount + indexAdd;
+        else return root->leftCount + indexAdd + 1;
+    }
     if (root->leftSum < sum)
     {
         return prefixSumIndex(root->right, sum - root->leftSum, indexAdd + root->leftCount);
     }
     else // sum<=leftSum
     {
-        // root is the one
-        if (root->left == NULL)
+        if (root->left == NULL) //just the root
             return indexAdd + 1;
-        else if (root->leftSum - sum < root->value)
-            return indexAdd + root->leftCount; // leftCount contains root itself.
         else
             return prefixSumIndex(root->left, sum, indexAdd);
     }
 }
 
-AVLnode *deleteLast(AVLnode *root)
+AVLnode* deleteLast(AVLnode* root)
 {
     if (root == NULL)
         return NULL;
@@ -167,7 +169,7 @@ AVLnode *deleteLast(AVLnode *root)
     }
     else if (root->left)
     {
-        AVLnode *tmp = root->left;
+        AVLnode* tmp = root->left;
         delete root;
         return tmp;
     }
