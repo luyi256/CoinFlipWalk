@@ -79,11 +79,16 @@ int main(int argc, char** argv)
                     if (g.outSizeList[u] == 0)
                         break;
                     r = R.drand() * g.outWeightList[u];
-                    double tmpwei = g.outWeightList[u];
                     uint tmpsize = g.outSizeList[u];
                     nodeno = prefixSumIndex(g.AVLList[u], r, 0) - 1;
+                    if (nodeno >= tmpsize) {
+                        cout << "error, out of outsize" << endl;
+                        exit(-1);
+                    }
                     u = g.neighborList[u][nodeno].id;
                 }
+                if (g.outSizeList[u] == 0 && i <= L)
+                    continue;
                 final_p[u] += 1.0 / w;
                 if (final_exist[u] == 0)
                 {
@@ -132,6 +137,4 @@ int main(int argc, char** argv)
     cout << endl
         << endl
         << endl;
-
-
 }
