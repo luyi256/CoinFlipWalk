@@ -84,6 +84,7 @@ int main(int argc, char** argv)
             final_count = 0;
             uint nr = 0.1 * L / eps * 4;
             cout << "samples=" << nr << endl;
+            double nrInverse = 1.0 / double(nr);
             for (uint k = 0; k < nr; k++)
             {
                 uint tempLevel = 0;
@@ -91,8 +92,9 @@ int main(int argc, char** argv)
                 candidate_count[0] = 1;
                 candidate_count[1] = 0;
                 prob[0][u] = 1.0;
-                while (tempLevel <= L)
+                while (tempLevel < L)
                 {
+                    uint nextLevel = tempLevel + 1;
                     uint tempLevelID = tempLevel % 2;
                     uint newLevelID = (tempLevel + 1) % 2;
                     uint candidateCnt = candidate_count[tempLevelID];
@@ -105,16 +107,6 @@ int main(int argc, char** argv)
                         double tempP = prob[tempLevelID][tempNode];
                         cs_exist[tempLevelID][tempNode] = 0;
                         prob[tempLevelID][tempNode] = 0;
-                        if (tempLevel == L)
-                        {
-                            if (final_exist[tempNode] == 0)
-                            {
-                                final_exist[tempNode] = 1;
-                                final_node[final_count++] = tempNode;
-                            }
-                            final_p[tempNode] += tempP / (double)nr;
-                            continue;
-                        }
                         double outVertWt = g.outWeightList[tempNode];
                         double incre = tempP / outVertWt;
                         uint tmpBitmap = g.bitmap[tempNode];
@@ -138,11 +130,22 @@ int main(int argc, char** argv)
                                 {
                                     const node& tmpnode = tmpSubsetInfo.addr[setidx];
                                     uint newNode = tmpnode.id;
-                                    prob[newLevelID][newNode] += incre * tmpnode.w;
-                                    if (cs_exist[newLevelID][newNode] == 0)
+                                    if (nextLevel == L) {
+                                        if (final_exist[newNode] == 0)
+                                        {
+                                            final_exist[newNode] = 1;
+                                            final_node[final_count++] = newNode;
+                                        }
+                                        final_p[newNode] += incre * tmpnode.w * nrInverse;
+                                    }
+                                    else
                                     {
-                                        cs_exist[newLevelID][newNode] = 1;
-                                        candidate_set[newLevelID][candidate_count[newLevelID]++] = newNode;
+                                        prob[newLevelID][newNode] += incre * tmpnode.w;
+                                        if (cs_exist[newLevelID][newNode] == 0)
+                                        {
+                                            cs_exist[newLevelID][newNode] = 1;
+                                            candidate_set[newLevelID][candidate_count[newLevelID]++] = newNode;
+                                        }
                                     }
                                 }
                             }
@@ -153,11 +156,22 @@ int main(int argc, char** argv)
                                     double r2 = R.drand();
                                     if (r2 < tmpnode.w / lastMaxw)
                                     {
-                                        prob[newLevelID][tmpnode.id] += 1;
-                                        if (cs_exist[newLevelID][tmpnode.id] == 0)
+                                        if (nextLevel == L) {
+                                            if (final_exist[tmpnode.id] == 0)
+                                            {
+                                                final_exist[tmpnode.id] = 1;
+                                                final_node[final_count++] = tmpnode.id;
+                                            }
+                                            final_p[tmpnode.id] += nrInverse;
+                                        }
+                                        else
                                         {
-                                            cs_exist[newLevelID][tmpnode.id] = 1;
-                                            candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
+                                            prob[newLevelID][tmpnode.id] += 1;
+                                            if (cs_exist[newLevelID][tmpnode.id] == 0)
+                                            {
+                                                cs_exist[newLevelID][tmpnode.id] = 1;
+                                                candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
+                                            }
                                         }
                                     }
                                 }
@@ -173,11 +187,22 @@ int main(int argc, char** argv)
                                         double r2 = R.drand();
                                         if (r2 < tmpnode.w / maxw)
                                         {
-                                            prob[newLevelID][tmpnode.id] += 1;
-                                            if (cs_exist[newLevelID][tmpnode.id] == 0)
+                                            if (nextLevel == L) {
+                                                if (final_exist[tmpnode.id] == 0)
+                                                {
+                                                    final_exist[tmpnode.id] = 1;
+                                                    final_node[final_count++] = tmpnode.id;
+                                                }
+                                                final_p[tmpnode.id] += nrInverse;
+                                            }
+                                            else
                                             {
-                                                cs_exist[newLevelID][tmpnode.id] = 1;
-                                                candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
+                                                prob[newLevelID][tmpnode.id] += 1;
+                                                if (cs_exist[newLevelID][tmpnode.id] == 0)
+                                                {
+                                                    cs_exist[newLevelID][tmpnode.id] = 1;
+                                                    candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
+                                                }
                                             }
                                         }
                                         node& former = tmpSubsetInfo.addr[firstIdx];
@@ -194,13 +219,22 @@ int main(int argc, char** argv)
                                     continue;
                                 }
                                 else {
-                                    if (leftSize > 1) {
-                                        boost::geometric_distribution<> geo(1 - increMax);
-                                        skipIdx += geo(rng);
-                                        while (skipIdx < subsetSize) {
-                                            const node& tmp = tmpSubsetInfo.addr[skipIdx];
-                                            double r2 = R.drand();
-                                            if (r2 < tmp.w / maxw)
+                                    boost::geometric_distribution<> geo(1 - increMax);
+                                    skipIdx += geo(rng);
+                                    while (skipIdx < subsetSize) {
+                                        const node& tmp = tmpSubsetInfo.addr[skipIdx];
+                                        double r2 = R.drand();
+                                        if (r2 < tmp.w / maxw)
+                                        {
+                                            if (nextLevel == L) {
+                                                if (final_exist[tmp.id] == 0)
+                                                {
+                                                    final_exist[tmp.id] = 1;
+                                                    final_node[final_count++] = tmp.id;
+                                                }
+                                                final_p[tmp.id] += nrInverse;
+                                            }
+                                            else
                                             {
                                                 prob[newLevelID][tmp.id] += 1;
                                                 if (cs_exist[newLevelID][tmp.id] == 0)
@@ -209,29 +243,13 @@ int main(int argc, char** argv)
                                                     candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
                                                 }
                                             }
-                                            skipIdx += geo(rng);
                                         }
-                                        skipIdx -= subsetSize;
-                                        lastMaxw = maxw;
-                                        continue;
+                                        skipIdx += geo(rng);
                                     }
+                                    skipIdx -= subsetSize;
+                                    lastMaxw = maxw;
+                                    continue;
                                 }
-                                for (uint setidx = skipIdx + 1; setidx < subsetSize; setidx++)
-                                {
-                                    const node& tmpnode = tmpSubsetInfo.addr[setidx];
-                                    double r2 = R.drand();
-                                    if (r2 < tmpnode.w * incre)
-                                    {
-                                        prob[newLevelID][tmpnode.id] += 1;
-                                        if (cs_exist[newLevelID][tmpnode.id] == 0)
-                                        {
-                                            cs_exist[newLevelID][tmpnode.id] = 1;
-                                            candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
-                                        }
-                                    }
-                                }
-                                skipIdx = -1;
-                                continue;
                             }
                         }
                     }
