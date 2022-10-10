@@ -124,7 +124,9 @@ int main(int argc, char** argv)
                                 continue;
                             }
                             double increMax = incre * maxw;
-                            if (increMax >= 1)
+                            int leftSize = subsetSize - skipIdx - 1;
+                            int bio_expect = leftSize * increMax;
+                            if (increMax >= 1 || bio_expect > 0.9 * leftSize)
                             {
                                 for (uint setidx = 0; setidx < subsetSize; setidx++)
                                 {
@@ -175,8 +177,6 @@ int main(int argc, char** argv)
                                         }
                                     }
                                 }
-                                int leftSize = subsetSize - skipIdx - 1;
-                                int bio_expect = leftSize * increMax;
                                 if (bio_expect > g.avg_degree_div3 && leftSize > 1) {
                                     boost::binomial_distribution<> bio(leftSize, increMax);
                                     int rbio = bio(rng);
