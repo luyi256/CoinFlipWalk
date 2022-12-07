@@ -22,7 +22,7 @@
 #include <chrono>
 #include<stdio.h>
 using namespace std;
-
+const int PRESERVE_SUBSET = 3;
 typedef unsigned int uint;
 const int add_num = 100000;
 const int most_bit = 31;
@@ -42,6 +42,245 @@ struct node
 		id = tmp.id;
 		w = tmp.w;
 		return *this;
+	}
+};
+
+class originGraph
+{
+public:
+	uint n;
+	string filedir, filelabel;
+	vector<node>* neighborList;
+	unordered_map<uint, int>* adjList;
+	uint* outSizeList;
+	originGraph() {}
+	originGraph(const string& _filedir, const string& _filelabel)
+	{
+		filedir = _filedir;
+		filelabel = _filelabel;
+		string neiNode, neiWeight, neiNum, graphAttr;
+		neiNode = filedir + filelabel + ".outEdges";
+		neiWeight = filedir + filelabel + ".outWEdges";
+		neiNum = filedir + filelabel + ".outPtr";
+		graphAttr = filedir + filelabel + ".attribute";
+		cout << "FilePath: " << graphAttr.c_str() << endl;
+		cout << "Read graph attributes..." << endl;
+		string tmp;
+		ifstream graphAttrIn(graphAttr.c_str());
+		if (!graphAttrIn) {
+			uint m = 0;
+			string filename = filedir + filelabel + ".txt";
+			ifstream infile;
+			infile.open(filename);
+			if (!infile)
+			{
+				cout << "ERROR: unable to open source dataset: " << filename << endl;
+				exit(-1);
+			}
+
+			cout << "Read the original txt file..." << endl;
+			uint from;
+			uint to;
+			double weight;
+			uint n = 0;
+			while (infile >> from >> to >> weight)
+			{
+				if (from > n) n = from;
+				else if (to > n) n = to;
+			}
+			n++;
+			infile.clear();
+			infile.seekg(0);
+			uint* indegree = new uint[n];
+			uint* outdegree = new uint[n];
+			for (uint i = 0; i < n; i++)
+			{
+				indegree[i] = 0;
+				outdegree[i] = 0;
+			}
+			// read graph and get degree info
+
+			while (infile >> from >> to >> weight)
+			{
+				outdegree[from]++;
+				indegree[to]++;
+			}
+
+			uint** inAdjList = new uint * [n];
+			uint** outAdjList = new uint * [n];
+
+			double** inAdjWList = new double* [n];
+			double** outAdjWList = new double* [n];
+
+			uint* pointer_in = new uint[n];
+			uint* pointer_out = new uint[n];
+			for (uint i = 0; i < n; i++)
+			{
+				inAdjList[i] = new uint[indegree[i]];
+				outAdjList[i] = new uint[outdegree[i]];
+
+				inAdjWList[i] = new double[indegree[i]];
+				outAdjWList[i] = new double[outdegree[i]];
+
+				pointer_in[i] = 0;
+				pointer_out[i] = 0;
+			}
+			infile.clear();
+			infile.seekg(0);
+
+			while (infile >> from >> to >> weight)
+			{
+				outAdjList[from][pointer_out[from]] = to;
+				outAdjWList[from][pointer_out[from]] = weight;
+				pointer_out[from]++;
+				inAdjList[to][pointer_in[to]] = from;
+				inAdjWList[to][pointer_in[to]] = weight;
+				pointer_in[to]++;
+				m++;
+			}
+			infile.close();
+			delete pointer_in;
+			delete pointer_out;
+
+			cout << "Write to csr file..." << endl;
+			uint* coutEL = new uint[m];
+			uint* coutPL = new uint[n + 1];
+			double* coutWEL = new double[m];
+			coutPL[0] = 0;
+			uint outid = 0;
+			uint out_curnum = 0;
+			for (uint i = 0; i < n; i++)
+			{
+				outid += outdegree[i];
+				coutPL[i + 1] = outid;
+				for (uint j = 0; j < outdegree[i]; j++)
+				{
+					coutEL[out_curnum] = outAdjList[i][j];
+					coutWEL[out_curnum] = outAdjWList[i][j];
+					out_curnum += 1;
+				}
+			}
+			ofstream cout_attr(filedir + filelabel + ".attribute");
+			cout_attr << "n " << n << "\n";
+			cout_attr << "m " << m << "\n";
+			cout_attr.close();
+			ofstream foutEL(filedir + filelabel + ".outEdges", ios::out | ios::binary);
+			ofstream foutPL(filedir + filelabel + ".outPtr", ios::out | ios::binary);
+			ofstream foutWEL(filedir + filelabel + ".outWEdges", ios::out | ios::binary);
+			foutEL.write((char*)&coutEL[0], sizeof(coutEL[0]) * m);
+			foutPL.write((char*)&coutPL[0], sizeof(coutPL[0]) * (n + 1));
+			foutWEL.write((char*)&coutWEL[0], sizeof(coutWEL[0]) * m);
+
+			foutEL.close();
+			foutPL.close();
+			foutWEL.close();
+
+			delete[] coutPL;
+			delete[] coutEL;
+			delete[] coutWEL;
+			graphAttrIn.close();
+			graphAttrIn.open(graphAttr.c_str());
+		}
+		graphAttrIn >> tmp >> n;
+		cout << "n=" << n << endl;
+		graphAttrIn.close();
+		cout << "Read graph ..." << endl;
+		ifstream neiNumIn(neiNum.c_str(), ios::in | ios::binary);
+		ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
+		ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
+		uint outSize;
+		uint outSizeSum = 0, preOutSizeSum = 0;
+		neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
+		neighborList = new vector<node>[n];
+		adjList = new unordered_map<uint, int>[n];
+		outSizeList = new uint[n];
+		int processWei = 0;
+		if (neiNode.find("affinity") != string::npos) processWei = 1;
+		for (uint i = 0; i < n; i++)
+		{
+			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
+			outSize = outSizeSum - preOutSizeSum;
+			preOutSizeSum = outSizeSum;
+			for (uint j = 0; j < outSize; j++)
+			{
+				uint id;
+				double w;
+				neiNodeIn.read(reinterpret_cast<char*>(&id), sizeof(uint));
+				neiWeightIn.read(reinterpret_cast<char*>(&w), sizeof(double));
+				if (processWei) w = w * 100000 > 1 ? w * 100000 : 1;
+				neighborList[i].push_back(node(id, w));
+				adjList[i][id] = j;
+			}
+			outSizeList[i] = outSize;
+		}
+		neiNumIn.close();
+		neiWeightIn.close();
+		neiNodeIn.close();
+	}
+
+	void update()
+	{
+		ifstream opfile(filedir + "/" + filelabel + ".op", ios::in);
+		if (!opfile)
+		{
+			getAddEdge(add_num);
+			opfile.open(filedir + "/" + filelabel + ".op", ios::in);
+		}
+		uint sarr[add_num];
+		uint tarr[add_num];
+		double warr[add_num];
+		int opnum = 0;
+		while (opfile >> sarr[opnum] >> tarr[opnum] >> warr[opnum])
+		{
+			opnum++;
+		}
+		opfile.close();
+		// delete
+		auto begin = chrono::high_resolution_clock::now();
+		for (int i = 0; i < add_num; i++)
+		{
+			uint s = sarr[i];
+			uint t = tarr[i];
+			if (adjList[s].find(t) == adjList[s].end())
+			{
+				cout << "delete a nonexistent neighbor" << endl;
+				exit(-2);
+			}
+			uint neiidx = adjList[s][t];
+			double w = neighborList[s][neiidx].w;
+			uint outsize = outSizeList[s];
+			if (neiidx == outsize - 1)
+				neighborList[s].pop_back();
+			else
+			{
+				auto tmp = neighborList[s].end() - 1;
+				neighborList[s][neiidx].id = tmp->id;
+				neighborList[s][neiidx].w = tmp->w;
+				adjList[s][tmp->id] = neiidx;
+				neighborList[s].pop_back();
+			}
+			adjList[s].erase(t);
+			outSizeList[s]--;
+		}
+		cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		// add
+		begin = chrono::high_resolution_clock::now();
+		for (int i = 0; i < add_num; i++)
+		{
+			uint s = sarr[i];
+			neighborList[s].push_back(node{ tarr[i], warr[i] });
+			outSizeList[s]++;
+			adjList[s][tarr[i]] = neighborList[s].size() - 1;
+		}
+		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+	}
+
+	~originGraph()
+	{
+	}
+
+	void getAddEdge(long num)
+	{
 	}
 };
 
@@ -313,6 +552,7 @@ public:
 			if (weightGroupNum[s][groupIdx] == 1) {
 				weightheap[s].push_back(groupIdx);
 				push_heap(weightheap[s].begin(), weightheap[s].end());
+				weightheap[s].pop_back();
 			}
 		}
 		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
@@ -603,7 +843,7 @@ public:
 			// 	exit(-1);
 			// }
 		}
-		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 		// add
 		begin = chrono::high_resolution_clock::now();
 		for (int i = 0; i < add_num; i++)
@@ -622,7 +862,7 @@ public:
 			// 	exit(-1);
 			// }
 		}
-		cout << filelabel << " new del update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
+		cout << filelabel << " new add update time: " << (chrono::duration_cast<chrono::nanoseconds>(chrono::high_resolution_clock::now() - begin).count() / 1000000000.0) / add_num << endl;
 	}
 
 	void getAddEdge(long num)
@@ -971,14 +1211,18 @@ public:
 				else
 					sizeSubset[ceil(log2(w))]++;
 			}
+			int maxSubsetID = ceil(log2(maxw));
+			int subsetNum = sizeSubset.size();
+			int defaultSize = ceil(outSize / double(subsetNum)) * 1.2;
 			outWeightList[i] = outWeight;
 			bitmap[i] = 0;
 			if (maxw == 0)continue;
-			nonEmptySet[i] = new subsetInfo[most_bit + 1];
+			nonEmptySet[i] = new subsetInfo[maxSubsetID + PRESERVE_SUBSET + 1];
 			int nonESIdx = 0;
 			for (auto iter = sizeSubset.begin(); iter != sizeSubset.end(); iter++)
 			{
-				int size = iter->second * 2 > 10 ? iter->second * 2 : 10;
+				int size = ceil(iter->second * 1.5) > defaultSize ? ceil(iter->second * 1.5) : defaultSize;
+				// int size = iter->second + 1;
 				node* tmpArr = new node[size];
 				bitmap[i] += 1 << iter->first;
 				nonEmptySet[i][iter->first] = { tmpArr, pow(2, iter->first), size, 0 };

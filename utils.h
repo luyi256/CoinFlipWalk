@@ -2,7 +2,7 @@
 unsigned long long peak_mem()
 {
     char buf[1024];
-    FILE *fp;
+    FILE* fp;
     unsigned long long peaksize;
     fp = fopen("/proc/self/status", "r");
     if (fp == NULL)
@@ -12,7 +12,7 @@ unsigned long long peak_mem()
     }
     while (fgets(buf, sizeof(buf) - 1, fp) != NULL)
     {
-        if (sscanf(buf, "VmPeak:%llu", &peaksize) > 0)
+        if (sscanf(buf, "VmSize:%llu", &peaksize) > 0)
         {
             break;
         }
@@ -24,7 +24,7 @@ unsigned long long peak_mem()
 unsigned long long peak_rss()
 {
     char buf[1024];
-    FILE *fp;
+    FILE* fp;
     unsigned long long peaksize;
     fp = fopen("/proc/self/status", "r");
     if (fp == NULL)
@@ -66,7 +66,7 @@ int mkpath(string s, mode_t mode = 0755)
     return mdret;
 }
 
-void readGraphAttr(string filelabel, string filedir, uint &n, uint &m)
+void readGraphAttr(string filelabel, string filedir, uint& n, uint& m)
 {
     string graphAttr = filedir + filelabel + ".attribute";
     cout << "Read graph attributes..." << endl;
@@ -80,7 +80,7 @@ void readGraphAttr(string filelabel, string filedir, uint &n, uint &m)
     return;
 }
 
-void readGraph(string filelabel, string filedir, uint *outEL, uint *outPL, double *outWEL, uint n, uint m, int sorted)
+void readGraph(string filelabel, string filedir, uint* outEL, uint* outPL, double* outWEL, uint n, uint m, int sorted)
 {
 
     string neiNode, neiWeight, neiNum;
@@ -103,19 +103,19 @@ void readGraph(string filelabel, string filedir, uint *outEL, uint *outPL, doubl
     ifstream neiNumIn(neiNum.c_str(), ios::in | ios::binary);
     ifstream neiWeightIn(neiWeight.c_str(), ios::in | ios::binary);
     ifstream neiNodeIn(neiNode.c_str(), ios::in | ios::binary);
-    neiNodeIn.read((char *)&outEL[0], sizeof(outEL[0]) * m);
-    neiWeightIn.read((char *)&outWEL[0], sizeof(outWEL[0]) * m);
-    neiNumIn.read((char *)&outPL[0], sizeof(outPL[0]) * (n + 1));
+    neiNodeIn.read((char*)&outEL[0], sizeof(outEL[0]) * m);
+    neiWeightIn.read((char*)&outWEL[0], sizeof(outWEL[0]) * m);
+    neiNumIn.read((char*)&outPL[0], sizeof(outPL[0]) * (n + 1));
     neiNumIn.close();
     neiWeightIn.close();
     neiNodeIn.close();
     return;
 }
 
-void argParser(int argc, char **argv, string &filedir, string &filelabel, long &querynum, vector<double> &epss, uint &L, int &update)
+void argParser(int argc, char** argv, string& filedir, string& filelabel, long& querynum, vector<double>& epss, uint& L, int& update)
 // void argParser(int argc, char **argv, string &filedir, string &filelabel, long &querynum, double &eps, uint &L)
 {
-    char *endptr;
+    char* endptr;
     int i = 1;
     while (i < argc)
     {

@@ -10,15 +10,16 @@
 using namespace std;
 typedef unsigned int uint;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    char *endptr;
+    char* endptr;
     long querynum = 10;
     vector<double> epss;
     uint L = 10;
     string filedir, filelabel;
-    argParser(argc, argv, filedir, filelabel, querynum, epss, L);
-    Graph g(filedir, filelabel);
+    int is_update;
+    argParser(argc, argv, filedir, filelabel, querynum, epss, L, is_update);
+    originGraph g(filedir, filelabel);
     g.update();
     double pkm = peak_mem() / 1024.0 / 1024.0;
     cout << "Total graph: peak memory: " << pkm << " G" << endl;
