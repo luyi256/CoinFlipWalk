@@ -19,6 +19,7 @@
 #include "AVL.h"
 #include "rbtree.h"
 #include "utils.h"
+#include "Priority.h"
 #include <chrono>
 #include<stdio.h>
 using namespace std;
@@ -1235,6 +1236,8 @@ public:
 				tmpSubsetInfo.addr[tmpSubsetInfo.lastIdx].w = neighbor[j].w;
 				adjList[i][neighbor[j].id] = make_pair(subsetID, tmpSubsetInfo.lastIdx++);
 			}
+			sort(subsetWei.begin(), subsetWei.end(), greater<int>());
+			subsetHeap[i] = Priority(subsetWei);
 		}
 		neiNumIn.close();
 		neiWeightIn.close();

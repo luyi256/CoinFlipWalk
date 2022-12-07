@@ -62,8 +62,6 @@ int main(int argc, char** argv)
         final_node[i] = 0;
         final_exist[i] = 0;
     }
-    int seed = chrono::system_clock::now().time_since_epoch().count();
-    boost::mt19937 rng;
     stringstream ss_run;
     ss_run << "./analysis/CoinFlipWalk_" << filelabel << "_runtime.csv";
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
@@ -75,6 +73,7 @@ int main(int argc, char** argv)
         double avg_time = 0;
         for (uint i = 0; i < querynum; i++)
         {
+            unordered_map<uint, vector<int>> sortedSubsetWei;
             Random R;
             uint u;
             query >> u;
@@ -150,8 +149,18 @@ int main(int argc, char** argv)
                                         }
                                     }
                                 }
+                                idx++;
+                                continue;
                             }
-                            else
+                            geometric_distribution<int> distribution(increMax);
+                            int sum = distribution(generator);
+                            int num = 0;
+                            while (sum < subsetsize)
+                            {
+                                num++;
+                                sum += distribution(generator);
+                            }
+                            while (num--)
                             {
                                 if (skipIdx >= 0) {
                                     const node& tmpnode = tmpSubsetInfo.addr[skipIdx];
@@ -251,14 +260,28 @@ int main(int argc, char** argv)
                                     continue;
                                 }
                             }
+                            int diff = sum - subsetsize;
+                            while (idx < s)
+                            {
+                                idx++;
+                                int nextsize = g.neighborList[tempNode][sortedSubset[idx]].size();
+                                if (diff > nextsize)
+                                {
+                                    diff -= nextsize;
+                                    count++;
+                                }
+                                else
+                                    break;
+                            }
                         }
                     }
                     tempLevel++;
                 }
             }
-
             clock_t t1 = clock();
             avg_time += (t1 - t0) / (double)CLOCKS_PER_SEC;
+            cout << "skip count:" << count << endl;
+            cout << "shift count:" << shift_count << endl;
             cout << "Query time for node " << u << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s";
             stringstream ss_dir, ss;
             ss_dir << "./result/CoinFlipWalk/" << filelabel << "/" << L << "/" << eps << "/";
