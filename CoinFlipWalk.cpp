@@ -12,13 +12,12 @@
 using namespace std;
 typedef unsigned int uint;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     long querynum = 10;
     vector<double> epss;
     uint L = 10;
     string filedir, filelabel;
-    double thetad = 1.0;
     int is_update = 0;
     argParser(argc, argv, filedir, filelabel, querynum, epss, L, is_update);
     subsetGraph g(filedir, filelabel);
@@ -33,22 +32,22 @@ int main(int argc, char **argv)
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
     cout << "Input query file from: " << queryname << endl;
-    double *final_p = new double[g.n];
-    uint *final_node = new uint[g.n];
-    uint *final_exist = new uint[g.n];
+    double* final_p = new double[g.n];
+    uint* final_node = new uint[g.n];
+    uint* final_exist = new uint[g.n];
     uint final_count = 0;
-    uint *cs_exist[2];
+    uint* cs_exist[2];
     cs_exist[0] = new uint[g.n];
     cs_exist[1] = new uint[g.n];
     //当前层candidate_set的点
-    uint *candidate_set[2];
+    uint* candidate_set[2];
     candidate_set[0] = new uint[g.n];
     candidate_set[1] = new uint[g.n];
     uint candidate_count[2];
     candidate_count[0] = 0;
     candidate_count[1] = 0;
     //当前层该点的probability
-    double *prob[2];
+    double* prob[2];
     prob[0] = new double[g.n];
     prob[1] = new double[g.n];
     for (uint i = 0; i < g.n; i++)
@@ -65,14 +64,10 @@ int main(int argc, char **argv)
     }
     stringstream ss_run;
     ss_run << "./analysis/CoinFlipWalk_" << filelabel << "_runtime.csv";
-    ofstream writecsv;
-    writecsv.open(ss_run.str(), ios::app);
-    int seed = chrono::system_clock::now().time_since_epoch().count();
-    default_random_engine generator(seed);
-    int count = 0;
-    int shift_count = 0;
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
     {
+        ofstream writecsv;
+        writecsv.open(ss_run.str(), ios::app);
         double eps = *epsIt;
         query.open(queryname);
         double avg_time = 0;
@@ -81,15 +76,14 @@ int main(int argc, char **argv)
             unordered_map<uint, vector<int>> sortedSubsetWei;
             Random R;
             uint u;
-            double pushrate = 0, randomrate = 0, can_cnt = 0;
             query >> u;
             cout << i << ": " << u << endl;
             clock_t t0 = clock();
-            uint cnt1, cnt2;
             uint levelID = L % 2;
             final_count = 0;
             uint nr = 0.1 * L / eps * 4;
             cout << "samples=" << nr << endl;
+            double nrInverse = 1.0 / double(nr);
             for (uint k = 0; k < nr; k++)
             {
                 uint tempLevel = 0;
@@ -97,8 +91,9 @@ int main(int argc, char **argv)
                 candidate_count[0] = 1;
                 candidate_count[1] = 0;
                 prob[0][u] = 1.0;
-                while (tempLevel <= L)
+                while (tempLevel < L)
                 {
+                    uint nextLevel = tempLevel + 1;
                     uint tempLevelID = tempLevel % 2;
                     uint newLevelID = (tempLevel + 1) % 2;
                     uint candidateCnt = candidate_count[tempLevelID];
@@ -111,62 +106,47 @@ int main(int argc, char **argv)
                         double tempP = prob[tempLevelID][tempNode];
                         cs_exist[tempLevelID][tempNode] = 0;
                         prob[tempLevelID][tempNode] = 0;
-                        if (tempLevel == L)
-                        {
-                            if (final_exist[tempNode] == 0)
-                            {
-                                final_exist[tempNode] = 1;
-                                final_node[final_count++] = tempNode;
-                            }
-                            final_p[tempNode] += tempP / (double)nr;
-                            continue;
-                        }
-                        uint outSize = g.outSizeList[tempNode];
-                        if (outSize <= 0)
-                            continue;
                         double outVertWt = g.outWeightList[tempNode];
                         double incre = tempP / outVertWt;
-                        // if (sortedSubsetWei.find(tempNode) == sortedSubsetWei.end())
-                        // {
-                        //     vector<int> tmp;
-                        //     vector<int> &heap = g.subsetHeap[tempNode].heap;
-                        //     int s = heap.size();
-                        //     tmp.push_back(heap[0]);
-                        //     tmp.resize(s);
-                        //     for (int pivot = 1; pivot < s; pivot++)
-                        //     {
-                        //         int idx = pivot - 1;
-                        //         while (heap[pivot] > tmp[idx])
-                        //         {
-                        //             tmp[idx + 1] = tmp[idx];
-                        //             idx--;
-                        //             shift_count++;
-                        //         }
-                        //         tmp[idx + 1] = heap[pivot];
-                        //     }
-                        //     sortedSubsetWei[tempNode] = tmp;
-                        // }
-                        vector<int> &sortedSubset = g.subsetHeap[tempNode].heap;
-                        int s = sortedSubset.size();
-                        int idx = 0;
-                        while (idx < s)
+                        uint tmpBitmap = g.bitmap[tempNode];
+                        double lastMaxw = -1;
+                        int skipIdx = -1;
+                        while (tmpBitmap > 0)
                         {
-                            int subsetID = sortedSubset[idx];
-                            auto &subset = g.neighborList[tempNode][subsetID];
-                            int subsetsize = subset.size();
-                            double powans = pow(2, subsetID);
-                            double increMax = incre * powans;
-                            if (increMax >= thetad)
+                            int subsetID = most_bit - __builtin_clz(tmpBitmap);
+                            auto tmpSubsetInfo = g.nonEmptySet[tempNode][subsetID];
+                            double maxw = tmpSubsetInfo.maxw;
+                            tmpBitmap -= maxw;
+                            int subsetSize = tmpSubsetInfo.lastIdx;
+                            if (skipIdx >= subsetSize) {
+                                skipIdx -= subsetSize;
+                                continue;
+                            }
+                            double increMax = incre * maxw;
+                            int leftSize = subsetSize - skipIdx - 1;
+                            int bio_expect = leftSize * increMax;
+                            if (increMax >= 1 || bio_expect > 0.9 * leftSize)
                             {
-                                for (uint setidx = 0; setidx < subsetsize; setidx++)
+                                for (uint setidx = 0; setidx < subsetSize; setidx++)
                                 {
-                                    node &tmpnode = subset[setidx];
+                                    const node& tmpnode = tmpSubsetInfo.addr[setidx];
                                     uint newNode = tmpnode.id;
-                                    prob[newLevelID][newNode] += incre * tmpnode.w;
-                                    if (cs_exist[newLevelID][newNode] == 0)
+                                    if (nextLevel == L) {
+                                        if (final_exist[newNode] == 0)
+                                        {
+                                            final_exist[newNode] = 1;
+                                            final_node[final_count++] = newNode;
+                                        }
+                                        final_p[newNode] += incre * tmpnode.w * nrInverse;
+                                    }
+                                    else
                                     {
-                                        cs_exist[newLevelID][newNode] = 1;
-                                        candidate_set[newLevelID][candidate_count[newLevelID]++] = newNode;
+                                        prob[newLevelID][newNode] += incre * tmpnode.w;
+                                        if (cs_exist[newLevelID][newNode] == 0)
+                                        {
+                                            cs_exist[newLevelID][newNode] = 1;
+                                            candidate_set[newLevelID][candidate_count[newLevelID]++] = newNode;
+                                        }
                                     }
                                 }
                                 idx++;
@@ -182,17 +162,102 @@ int main(int argc, char **argv)
                             }
                             while (num--)
                             {
-                                int r1 = floor(R.drand() * subsetsize);
-                                node tmp = subset[r1];
-                                double r2 = R.drand();
-                                if (r2 < tmp.w / powans)
-                                {
-                                    prob[newLevelID][tmp.id] += 1.0;
-                                    if (cs_exist[newLevelID][tmp.id] == 0)
+                                if (skipIdx >= 0) {
+                                    const node& tmpnode = tmpSubsetInfo.addr[skipIdx];
+                                    double r2 = R.drand();
+                                    if (r2 < tmpnode.w / lastMaxw)
                                     {
-                                        cs_exist[newLevelID][tmp.id] = 1;
-                                        candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
+                                        if (nextLevel == L) {
+                                            if (final_exist[tmpnode.id] == 0)
+                                            {
+                                                final_exist[tmpnode.id] = 1;
+                                                final_node[final_count++] = tmpnode.id;
+                                            }
+                                            final_p[tmpnode.id] += nrInverse;
+                                        }
+                                        else
+                                        {
+                                            prob[newLevelID][tmpnode.id] += 1;
+                                            if (cs_exist[newLevelID][tmpnode.id] == 0)
+                                            {
+                                                cs_exist[newLevelID][tmpnode.id] = 1;
+                                                candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
+                                            }
+                                        }
                                     }
+                                }
+                                if (bio_expect > g.avg_degree_div3 && leftSize > 1) {
+                                    boost::binomial_distribution<> bio(leftSize, increMax);
+                                    int rbio = bio(rng);
+                                    for (int cnt = 0;cnt < rbio;cnt++) {
+                                        int firstIdx = cnt + skipIdx + 1;
+                                        int r1 = int(floor(R.drand() * (leftSize - cnt))) + firstIdx;
+                                        node& tmpnode = tmpSubsetInfo.addr[r1];
+                                        double r2 = R.drand();
+                                        if (r2 < tmpnode.w / maxw)
+                                        {
+                                            if (nextLevel == L) {
+                                                if (final_exist[tmpnode.id] == 0)
+                                                {
+                                                    final_exist[tmpnode.id] = 1;
+                                                    final_node[final_count++] = tmpnode.id;
+                                                }
+                                                final_p[tmpnode.id] += nrInverse;
+                                            }
+                                            else
+                                            {
+                                                prob[newLevelID][tmpnode.id] += 1;
+                                                if (cs_exist[newLevelID][tmpnode.id] == 0)
+                                                {
+                                                    cs_exist[newLevelID][tmpnode.id] = 1;
+                                                    candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
+                                                }
+                                            }
+                                        }
+                                        node& former = tmpSubsetInfo.addr[firstIdx];
+                                        if (firstIdx != r1 && cnt < rbio - 1) {
+                                            uint tmpid = former.id;
+                                            double tmpw = former.w;
+                                            former.id = tmpnode.id;
+                                            former.w = tmpnode.w;
+                                            tmpnode.id = tmpid;
+                                            tmpnode.w = tmpw;
+                                        }
+                                    }
+                                    skipIdx = -1;
+                                    continue;
+                                }
+                                else {
+                                    boost::geometric_distribution<> geo(1 - increMax);
+                                    skipIdx += geo(rng);
+                                    while (skipIdx < subsetSize) {
+                                        const node& tmp = tmpSubsetInfo.addr[skipIdx];
+                                        double r2 = R.drand();
+                                        if (r2 < tmp.w / maxw)
+                                        {
+                                            if (nextLevel == L) {
+                                                if (final_exist[tmp.id] == 0)
+                                                {
+                                                    final_exist[tmp.id] = 1;
+                                                    final_node[final_count++] = tmp.id;
+                                                }
+                                                final_p[tmp.id] += nrInverse;
+                                            }
+                                            else
+                                            {
+                                                prob[newLevelID][tmp.id] += 1;
+                                                if (cs_exist[newLevelID][tmp.id] == 0)
+                                                {
+                                                    cs_exist[newLevelID][tmp.id] = 1;
+                                                    candidate_set[newLevelID][candidate_count[newLevelID]++] = tmp.id;
+                                                }
+                                            }
+                                        }
+                                        skipIdx += geo(rng);
+                                    }
+                                    skipIdx -= subsetSize;
+                                    lastMaxw = maxw;
+                                    continue;
                                 }
                             }
                             int diff = sum - subsetsize;
@@ -242,9 +307,10 @@ int main(int argc, char **argv)
         cout << endl;
         cout << "query time: " << avg_time / (double)querynum << " s" << endl;
         cout << "==== "
-             << "CoinFlipWalk"
-             << " with " << eps << " on " << filelabel << " done!====" << endl;
+            << "CoinFlipWalk"
+            << " with " << eps << " on " << filelabel << " done!====" << endl;
         writecsv << avg_time / (double)querynum << ',';
+        writecsv.close();
     }
 
     delete[] cs_exist[0];
@@ -257,8 +323,8 @@ int main(int argc, char **argv)
     delete[] final_node;
     delete[] final_exist;
     cout << endl
-         << endl
-         << endl;
+        << endl
+        << endl;
 
-    writecsv.close();
+
 }

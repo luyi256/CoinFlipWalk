@@ -10,7 +10,7 @@
 using namespace std;
 typedef unsigned int uint;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     long querynum = 10;
     vector<double> epss;
@@ -30,9 +30,9 @@ int main(int argc, char **argv)
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
     cout << "Input query file from: " << queryname << endl;
-    double *final_p = new double[g.n];
-    uint *final_node = new uint[g.n];
-    uint *final_exist = new uint[g.n];
+    double* final_p = new double[g.n];
+    uint* final_node = new uint[g.n];
+    uint* final_exist = new uint[g.n];
     uint final_count = 0;
     for (uint i = 0; i < g.n; i++)
     {
@@ -42,10 +42,11 @@ int main(int argc, char **argv)
     }
     stringstream ss_run;
     ss_run << "./analysis/RejectionWalk_" << filelabel << "_runtime.csv";
-    ofstream writecsv;
-    writecsv.open(ss_run.str(), ios::app);
+
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
     {
+        ofstream writecsv;
+        writecsv.open(ss_run.str(), ios::app);
         double eps = *epsIt;
         query.open(queryname);
         if (!query)
@@ -60,6 +61,7 @@ int main(int argc, char **argv)
             uint nodeId;
             query >> nodeId;
             cout << i << ": " << nodeId << endl;
+            cout << "outSize:" << g.outSizeList[nodeId] << endl;
             clock_t t0 = clock();
             final_count = 0;
             unsigned long long w = 1 / eps / 0.25;
@@ -74,14 +76,9 @@ int main(int argc, char **argv)
                 while (i++ < L)
                 {
                     uint outSize = g.outSizeList[u];
-                    double maxw = 0;
-                    for (uint k = 0; k < outSize; k++)
-                    {
-                        if (g.neighborList[u][k].w > maxw)
-                            maxw = g.neighborList[u][k].w;
-                    }
                     if (outSize == 0)
                         break;
+                    double maxw = pow(2, g.weightheap[u].front());
                     while (true)
                     {
                         double j = floor(R.drand() * outSize);
@@ -93,6 +90,8 @@ int main(int argc, char **argv)
                         }
                     }
                 }
+                if (g.outSizeList[u] == 0 && i <= L)
+                    continue;
                 final_p[u] += 1.0 / w;
                 if (final_exist[u] == 0)
                 {
@@ -132,17 +131,18 @@ int main(int argc, char **argv)
         cout << endl;
         cout << "query time: " << avg_time / (double)querynum << " s" << endl;
         cout << "==== "
-             << "RejectionWalk"
-             << " with " << eps << " on " << filelabel << " done!====" << endl;
+            << "RejectionWalk"
+            << " with " << eps << " on " << filelabel << " done!====" << endl;
         writecsv << avg_time / (double)querynum << ',';
+        writecsv.close();
     }
 
     delete[] final_p;
     delete[] final_node;
     delete[] final_exist;
     cout << endl
-         << endl
-         << endl;
+        << endl
+        << endl;
 
-    writecsv.close();
+
 }

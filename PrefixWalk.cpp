@@ -10,7 +10,7 @@
 using namespace std;
 typedef unsigned int uint;
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     long i = 1;
     long querynum = 10;
@@ -31,9 +31,9 @@ int main(int argc, char **argv)
     queryname = "./query/" + filelabel + ".query";
     ifstream query;
     cout << "Input query file from: " << queryname << endl;
-    double *final_p = new double[g.n];
-    uint *final_node = new uint[g.n];
-    uint *final_exist = new uint[g.n];
+    double* final_p = new double[g.n];
+    uint* final_node = new uint[g.n];
+    uint* final_exist = new uint[g.n];
     uint final_count = 0;
     for (uint i = 0; i < g.n; i++)
     {
@@ -43,10 +43,11 @@ int main(int argc, char **argv)
     }
     stringstream ss_run;
     ss_run << "./analysis/PrefixWalk_" << filelabel << "_runtime.csv";
-    ofstream writecsv;
-    writecsv.open(ss_run.str(), ios::app);
+
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
     {
+        ofstream writecsv;
+        writecsv.open(ss_run.str(), ios::app);
         double eps = *epsIt;
         query.open(queryname);
         double avg_time = 0;
@@ -78,11 +79,16 @@ int main(int argc, char **argv)
                     if (g.outSizeList[u] == 0)
                         break;
                     r = R.drand() * g.outWeightList[u];
-                    double tmpwei = g.outWeightList[u];
                     uint tmpsize = g.outSizeList[u];
                     nodeno = prefixSumIndex(g.AVLList[u], r, 0) - 1;
+                    if (nodeno >= tmpsize) {
+                        cout << "error, out of outsize" << endl;
+                        exit(-1);
+                    }
                     u = g.neighborList[u][nodeno].id;
                 }
+                if (g.outSizeList[u] == 0 && i <= L)
+                    continue;
                 final_p[u] += 1.0 / w;
                 if (final_exist[u] == 0)
                 {
@@ -120,16 +126,15 @@ int main(int argc, char **argv)
         cout << endl;
         cout << "query time: " << avg_time / (double)querynum << " s" << endl;
         cout << "==== "
-             << "PrefixWalk"
-             << " with " << eps << " on " << filelabel << " done!====" << endl;
+            << "PrefixWalk"
+            << " with " << eps << " on " << filelabel << " done!====" << endl;
         writecsv << avg_time / (double)querynum << ',';
+        writecsv.close();
     }
     delete[] final_p;
     delete[] final_node;
     delete[] final_exist;
     cout << endl
-         << endl
-         << endl;
-
-    writecsv.close();
+        << endl
+        << endl;
 }

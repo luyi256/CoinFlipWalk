@@ -17,9 +17,10 @@ int main(int argc, char **argv)
     vector<double> epss;
     uint L = 10;
     string filedir, filelabel;
-    argParser(argc, argv, filedir, filelabel, querynum, epss, L);
+    int is_update = 0;
+    argParser(argc, argv, filedir, filelabel, querynum, epss, L, is_update);
     Graph g(filedir, filelabel);
-    g.update();
+    // g.update();
     // exit(-1);
     double pkm = peak_mem() / 1024.0 / 1024.0;
     cout << "Total graph: peak memory: " << pkm << " G" << endl;
