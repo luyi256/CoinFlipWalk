@@ -5,12 +5,16 @@ from datetime import datetime
 import pytz
 #! args
 # 选择提取哪些数据集，会往本地写数据，文件：'.datalog/[date]_[measurement].data'
-datasets = []
-# "indochina-2004" "tags-stack-overflow" "threads-stack-overflow" "colisten-Spotify" "temporal-reddit-reply"  "twitter-2010"
-# "threads-stack-overflow" "colisten-Spotify" "bitcoin-temporal" "indochina-2004" "twitter-2010","orkut-links" ,"tags-stack-overflow"
-path = './analysis/'
+datasets = ["colisten-Spotify",]
+# "indochina-2004", "tags-stack-overflow", "threads-stack-overflow", "colisten-Spotify", "twitter-2010" 
+# "gottron-trec", "reuters", "bag-nytimes" "wikipedia-discussions-de" "edit-dewiki" "bag-pubmed"
+# "indochina-2004" "tags-stack-overflow" "threads-stack-overflow" "colisten-Spotify" "temporal-reddit-reply"  "twitter-2010" "sx-stackoverflow" "CollegeMsg" "email-Eu-core-temporal"
+# "youtube" "soc-LiveJournal1" "indochina-2004" "orkut-links" "tags-stack-overflow" "threads-stack-overflow" "blockchair" "colisten-Spotify" "bitcoin-temporal"
+# "colisten-Spotify" "indochina-2004" "bitcoin-temporal""block_ethereum"
+# "threads-stack-overflow" "colisten-Spotify" "bitcoin-temporal" "indochina-2004" "twitter-2010" "coauth-MAG" "coauth-AMiner" "temporal-reddit-reply" "colisten-Spotify" "twitter-2010" "coauth-MAG-History" "coauth-DBLP" "tags-ask-ubuntu"
+# "revision_affinity_10000_1"  "revision_affinity_v2_10000_1"  "revision_affinity_10000_13" "revision_affinity_10000_20"
+path = './result_query/10-13/' #  10-10_2_7039154 10-09_9189d8f
 measures = ['conductance', 'maxerr', 'precision']
-#!! 算法是必须跑四个的，不然要牵一发而动全身
 #! 常量设置
 # 避免生成的pdf在苹果系统中无法正确显示线形
 matplotlib.rcParams['pdf.fonttype'] = 42
@@ -37,7 +41,24 @@ datasets_alias = {
     "revision_affinity_v2_10000_1":'AG-2',
      "tags-ask-ubuntu":"ASK",
      "coauth-MAG-History":"MH",
-     "coauth-DBLP":"DBLP"
+     "coauth-DBLP":"DBLP",
+      "sx-mathoverflow" :'MOF',
+      "sx-stackoverflow":'SOF',
+      "CollegeMsg":'CM',"email-Eu-core-temporal":'EEC',
+      "libimseti":'LI',
+      "wikiconflict":'WC',
+      "yahoo-song":'YS',
+      "wikiconflict_v2":'WC2',
+      "gottron-trec":"GT",
+       "reuters" :'RT',
+       "bag-nytimes":'BN',
+       "wikipedia-discussions-de":'WD',
+       "bag-pubmed":'BP',
+       "edit-dewiki":'ED',
+       "yahoo-song-v2":'YS2',
+       "movielens-10m_rating":'MR',
+       "movielens-10m_rating-v2":'MR2',
+       "yahoo-song-v3":'YS3'
 }
 # algos = ['MCAM', 'MCSS', 'MCPS', 'MCAR']
 # algos = ['AliasWalk', 'CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
@@ -45,23 +66,23 @@ datasets_alias = {
 algos = ['CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
 algo_alias = ['CoinFlipWalk', 'PrefixWalk', 'RejectionWalk']
 ylabel = {
-    'conductance': 'conductance',
-    'maxerr': 'MaxAddErr',
-    'precision': 'precision@50'
+    'conductance': 'Conductance',
+    'maxerr': 'MaxError',
+    'precision': 'Precision@50'
 }
 measureIdx = {'precision': 1, 'conductance': 2, 'maxerr': 3}
 # colors = ['#263FA9', '#447B48', '#E85472', '#A686EC']
 colors = ['#1F1DBF', '#E85472', '#447B48']
 # markers = ["x", "s", "o", "+"]
-markers = ["s", "o", "+"]
+markers = ["x", "*", "+"]
 tz = pytz.timezone('Asia/Shanghai')
 dt = datetime.now(tz).strftime("%m-%d")
-figpath = path + '../result_query/' + dt + '/fig/'
+figpath = './result_query/' + dt + '/fig/'
 if (os.path.exists(figpath) == False):
     os.makedirs(figpath)
 for measure in measures:
     for dataset in datasets:
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(10,8))
         for k, algo in enumerate(algos):
             print(dataset)
             print(algo)
@@ -75,21 +96,26 @@ for measure in measures:
             print(runtime)
             print(runerror)
             # print([i[measureIdx[measure]] for i in runerror])
-            plt.plot(runtime, [i[measureIdx[measure]] for i in runerror],
+            if dataset=='colisten-Spotify':
+                idx=[0,4]
+            else:
+                idx=[0,5]
+            plt.plot(runtime[idx[0]:idx[1]], [i[measureIdx[measure]] for i in runerror][idx[0]:idx[1]],
                      label=algo,
                      marker=markers[k],
                      color=colors[k],
-                     markersize=14,
+                     markersize=25,
                      markerfacecolor='none',
-                     linewidth=2,
-                     mew=2)
+                     linewidth=3,
+                     mew=3)
         if measureIdx[measure] == 3:
             ax.set_yscale('log')
         ax.set_xscale('log')
-        plt.xlabel('query time(s)-' + datasets_alias[dataset], fontsize=18)
-        ax.tick_params(axis='both', which='major', labelsize=15)
-        plt.ylabel(measure + '-' + datasets_alias[dataset], fontsize=18)
-        plt.legend(prop={'size': 13},fontsize=18)
+        ax.set_yticklabels([],minor=True)
+        plt.xlabel('query time (s) - ' + datasets_alias[dataset], fontsize=36)
+        ax.tick_params(axis='both', which='major', labelsize=28)
+        plt.ylabel(ylabel[measure] + ' - ' + datasets_alias[dataset], fontsize=36)
+        plt.legend(prop={'size': 25},fontsize=35)
         plt.tight_layout()
         plt.savefig(
             figpath +
