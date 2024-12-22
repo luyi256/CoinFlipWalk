@@ -17,7 +17,7 @@ struct node
 {
     uint id;
     double w;
-    node(uint _id, double _w) : id(_id), w(_w) {}
+    node(uint _id, double _w): id(_id), w(_w) {}
     node(const node& tmp)
     {
         id = tmp.id;
@@ -415,7 +415,7 @@ metric::metric(string filedir, string filelabel, string algoname, long querynum,
     cout << "Avg conductance = " << avg_conductance << endl;
     cout << "Avg max-additive-error = " << avg_max_additive_error << endl;
     stringstream ss_run;
-    ss_run << "./analysis/" << algoname << "_" << filelabel << "_runerror.csv";
+    ss_run << "./analysis/" << algoname << "_" << filelabel << "_" << L << "_runerror.csv";
     ofstream writecsv;
     writecsv.open(ss_run.str(), ios::app);
     writecsv << avg_l1_error << ',' << avg_pre50 << ',' << avg_conductance << ',' << avg_max_additive_error << endl;

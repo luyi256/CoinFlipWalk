@@ -32,7 +32,7 @@ struct node
 	uint id;
 	double w;
 	node() {}
-	node(uint _id, double _w) : id(_id), w(_w) {}
+	node(uint _id, double _w): id(_id), w(_w) {}
 	node(const node& tmp)
 	{
 		id = tmp.id;
@@ -1139,6 +1139,7 @@ public:
 	subsetInfo** nonEmptySet;
 	uint* bitmap;
 	double avg_degree_div3;
+	unordered_map<uint, uint> outSizeList;
 	subsetGraph() {}
 	subsetGraph(const string& _filedir, const string& _filelabel)
 	{
@@ -1193,6 +1194,7 @@ public:
 			neiNumIn.read(reinterpret_cast<char*>(&outSizeSum), sizeof(uint));
 			outSize = outSizeSum - preOutSizeSum;
 			preOutSizeSum = outSizeSum;
+			outSizeList[i] = outSize;
 			vector<node> neighbor;
 			double maxw = 0;
 			unordered_map<int, int> sizeSubset;

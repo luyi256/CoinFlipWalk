@@ -42,7 +42,7 @@ int main(int argc, char** argv)
         final_exist[i] = 0;
     }
     stringstream ss_run;
-    ss_run << "./analysis/PrefixWalk_" << filelabel << "_runtime.csv";
+    ss_run << "./analysis/PrefixWalk_" << filelabel << "_" << L << "_runtime.csv";
 
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
     {

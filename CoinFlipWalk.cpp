@@ -63,7 +63,9 @@ int main(int argc, char** argv)
         final_exist[i] = 0;
     }
     stringstream ss_run;
-    ss_run << "./analysis/CoinFlipWalk_" << filelabel << "_runtime.csv";
+    ss_run << "./analysis/CoinFlipWalk_" << filelabel << "_" << L << "_runtime.csv";
+    boost::mt19937 rng;
+
     for (auto epsIt = epss.begin(); epsIt != epss.end(); epsIt++)
     {
         ofstream writecsv;
@@ -73,7 +75,8 @@ int main(int argc, char** argv)
         double avg_time = 0;
         for (uint i = 0; i < querynum; i++)
         {
-            unordered_map<uint, vector<int>> sortedSubsetWei;
+            // double avg_degree = 0;
+            // double tot_node = 0;
             Random R;
             uint u;
             query >> u;
@@ -103,14 +106,16 @@ int main(int argc, char** argv)
                     for (uint j = 0; j < candidateCnt; j++)
                     {
                         uint tempNode = candidate_set[tempLevelID][j];
+                        // avg_degree += g.outSizeList[tempNode];
+                        // tot_node += 1;
                         double tempP = prob[tempLevelID][tempNode];
                         cs_exist[tempLevelID][tempNode] = 0;
                         prob[tempLevelID][tempNode] = 0;
                         double outVertWt = g.outWeightList[tempNode];
                         double incre = tempP / outVertWt;
                         uint tmpBitmap = g.bitmap[tempNode];
-                        double lastMaxw = -1;
-                        int skipIdx = -1;
+                        // double lastMaxw = -1;
+                        // int skipIdx = -1;
                         while (tmpBitmap > 0)
                         {
                             int subsetID = most_bit - __builtin_clz(tmpBitmap);
@@ -118,14 +123,15 @@ int main(int argc, char** argv)
                             double maxw = tmpSubsetInfo.maxw;
                             tmpBitmap -= maxw;
                             int subsetSize = tmpSubsetInfo.lastIdx;
-                            if (skipIdx >= subsetSize) {
-                                skipIdx -= subsetSize;
-                                continue;
-                            }
+                            // if (skipIdx >= subsetSize) {
+                            //     skipIdx -= subsetSize;
+                            //     continue;
+                            // }
                             double increMax = incre * maxw;
-                            int leftSize = subsetSize - skipIdx - 1;
-                            int bio_expect = leftSize * increMax;
-                            if (increMax >= 1 || bio_expect > 0.9 * leftSize)
+                            // int leftSize = subsetSize - skipIdx - 1;
+                            // int bio_expect = leftSize * increMax;
+                            // if (increMax >= 1 || bio_expect > 0.9 * leftSize)
+                            if (increMax >= 1)
                             {
                                 for (uint setidx = 0; setidx < subsetSize; setidx++)
                                 {
@@ -149,85 +155,77 @@ int main(int argc, char** argv)
                                         }
                                     }
                                 }
-                                idx++;
-                                continue;
                             }
-                            geometric_distribution<int> distribution(increMax);
-                            int sum = distribution(generator);
-                            int num = 0;
-                            while (sum < subsetsize)
+                            else
                             {
-                                num++;
-                                sum += distribution(generator);
-                            }
-                            while (num--)
-                            {
-                                if (skipIdx >= 0) {
-                                    const node& tmpnode = tmpSubsetInfo.addr[skipIdx];
-                                    double r2 = R.drand();
-                                    if (r2 < tmpnode.w / lastMaxw)
-                                    {
-                                        if (nextLevel == L) {
-                                            if (final_exist[tmpnode.id] == 0)
-                                            {
-                                                final_exist[tmpnode.id] = 1;
-                                                final_node[final_count++] = tmpnode.id;
-                                            }
-                                            final_p[tmpnode.id] += nrInverse;
-                                        }
-                                        else
-                                        {
-                                            prob[newLevelID][tmpnode.id] += 1;
-                                            if (cs_exist[newLevelID][tmpnode.id] == 0)
-                                            {
-                                                cs_exist[newLevelID][tmpnode.id] = 1;
-                                                candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
-                                            }
-                                        }
-                                    }
-                                }
-                                if (bio_expect > g.avg_degree_div3 && leftSize > 1) {
-                                    boost::binomial_distribution<> bio(leftSize, increMax);
-                                    int rbio = bio(rng);
-                                    for (int cnt = 0;cnt < rbio;cnt++) {
-                                        int firstIdx = cnt + skipIdx + 1;
-                                        int r1 = int(floor(R.drand() * (leftSize - cnt))) + firstIdx;
-                                        node& tmpnode = tmpSubsetInfo.addr[r1];
-                                        double r2 = R.drand();
-                                        if (r2 < tmpnode.w / maxw)
-                                        {
-                                            if (nextLevel == L) {
-                                                if (final_exist[tmpnode.id] == 0)
-                                                {
-                                                    final_exist[tmpnode.id] = 1;
-                                                    final_node[final_count++] = tmpnode.id;
-                                                }
-                                                final_p[tmpnode.id] += nrInverse;
-                                            }
-                                            else
-                                            {
-                                                prob[newLevelID][tmpnode.id] += 1;
-                                                if (cs_exist[newLevelID][tmpnode.id] == 0)
-                                                {
-                                                    cs_exist[newLevelID][tmpnode.id] = 1;
-                                                    candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
-                                                }
-                                            }
-                                        }
-                                        node& former = tmpSubsetInfo.addr[firstIdx];
-                                        if (firstIdx != r1 && cnt < rbio - 1) {
-                                            uint tmpid = former.id;
-                                            double tmpw = former.w;
-                                            former.id = tmpnode.id;
-                                            former.w = tmpnode.w;
-                                            tmpnode.id = tmpid;
-                                            tmpnode.w = tmpw;
-                                        }
-                                    }
-                                    skipIdx = -1;
-                                    continue;
-                                }
-                                else {
+                                // if (skipIdx >= 0) {
+                                //     const node& tmpnode = tmpSubsetInfo.addr[skipIdx];
+                                //     double r2 = R.drand();
+                                //     if (r2 < tmpnode.w / lastMaxw)
+                                //     {
+                                //         if (nextLevel == L) {
+                                //             if (final_exist[tmpnode.id] == 0)
+                                //             {
+                                //                 final_exist[tmpnode.id] = 1;
+                                //                 final_node[final_count++] = tmpnode.id;
+                                //             }
+                                //             final_p[tmpnode.id] += nrInverse;
+                                //         }
+                                //         else
+                                //         {
+                                //             prob[newLevelID][tmpnode.id] += 1;
+                                //             if (cs_exist[newLevelID][tmpnode.id] == 0)
+                                //             {
+                                //                 cs_exist[newLevelID][tmpnode.id] = 1;
+                                //                 candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
+                                //             }
+                                //         }
+                                //     }
+                                // }
+                                // if (bio_expect > 35 && leftSize > 1) {
+                                //     boost::binomial_distribution<> bio(leftSize, increMax);
+                                //     int rbio = bio(rng);
+                                //     for (int cnt = 0;cnt < rbio;cnt++) {
+                                //         int firstIdx = cnt + skipIdx + 1;
+                                //         int r1 = int(floor(R.drand() * (leftSize - cnt))) + firstIdx;
+                                //         node& tmpnode = tmpSubsetInfo.addr[r1];
+                                //         double r2 = R.drand();
+                                //         if (r2 < tmpnode.w / maxw)
+                                //         {
+                                //             if (nextLevel == L) {
+                                //                 if (final_exist[tmpnode.id] == 0)
+                                //                 {
+                                //                     final_exist[tmpnode.id] = 1;
+                                //                     final_node[final_count++] = tmpnode.id;
+                                //                 }
+                                //                 final_p[tmpnode.id] += nrInverse;
+                                //             }
+                                //             else
+                                //             {
+                                //                 prob[newLevelID][tmpnode.id] += 1;
+                                //                 if (cs_exist[newLevelID][tmpnode.id] == 0)
+                                //                 {
+                                //                     cs_exist[newLevelID][tmpnode.id] = 1;
+                                //                     candidate_set[newLevelID][candidate_count[newLevelID]++] = tmpnode.id;
+                                //                 }
+                                //             }
+                                //         }
+                                //         node& former = tmpSubsetInfo.addr[firstIdx];
+                                //         if (firstIdx != r1 && cnt < rbio - 1) {
+                                //             uint tmpid = former.id;
+                                //             double tmpw = former.w;
+                                //             former.id = tmpnode.id;
+                                //             former.w = tmpnode.w;
+                                //             tmpnode.id = tmpid;
+                                //             tmpnode.w = tmpw;
+                                //         }
+                                //     }
+                                //     skipIdx = -1;
+                                //     continue;
+                                // }
+                                // else 
+                                {
+                                    int skipIdx = -1;
                                     boost::geometric_distribution<> geo(1 - increMax);
                                     skipIdx += geo(rng);
                                     while (skipIdx < subsetSize) {
@@ -255,34 +253,21 @@ int main(int argc, char** argv)
                                         }
                                         skipIdx += geo(rng);
                                     }
-                                    skipIdx -= subsetSize;
-                                    lastMaxw = maxw;
+                                    // skipIdx -= subsetSize;
+                                    // lastMaxw = maxw;
                                     continue;
                                 }
-                            }
-                            int diff = sum - subsetsize;
-                            while (idx < s)
-                            {
-                                idx++;
-                                int nextsize = g.neighborList[tempNode][sortedSubset[idx]].size();
-                                if (diff > nextsize)
-                                {
-                                    diff -= nextsize;
-                                    count++;
-                                }
-                                else
-                                    break;
                             }
                         }
                     }
                     tempLevel++;
                 }
             }
+
             clock_t t1 = clock();
             avg_time += (t1 - t0) / (double)CLOCKS_PER_SEC;
-            cout << "skip count:" << count << endl;
-            cout << "shift count:" << shift_count << endl;
             cout << "Query time for node " << u << ": " << (t1 - t0) / (double)CLOCKS_PER_SEC << " s";
+            // cout << "Avg Degree:" << avg_degree / tot_node << endl;
             stringstream ss_dir, ss;
             ss_dir << "./result/CoinFlipWalk/" << filelabel << "/" << L << "/" << eps << "/";
             ss << ss_dir.str() << u << ".txt";
